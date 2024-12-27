@@ -5,6 +5,10 @@ from FF8GameData.gamedata import GameData
 from .command import Command
 
 
+class GarbageFileError(IndexError):
+    pass
+
+
 class Ennemy():
     DAT_FILE_SECTION_LIST = ['header', 'skeleton', 'model_geometry', 'model_animation', 'unknown_section4', 'unknown_section5', 'unknown_section6', 'info_stat',
                              'battle_script', 'sound', 'unknown_section10', 'texture']
@@ -44,24 +48,31 @@ class Ennemy():
         # self.origin_file_checksum = get_checksum(file, algorithm='SHA256')
 
     def analyse_loaded_data(self, game_data):
-        for i in range(0, self.NUMBER_SECTION - 1):
-            self.section_raw_data[i] = self.file_raw_data[self.header_data['section_pos'][i]: self.header_data['section_pos'][i + 1]]
-        self.section_raw_data[self.NUMBER_SECTION - 1] = self.file_raw_data[
-                                                         self.header_data['section_pos'][self.NUMBER_SECTION - 1]:self.header_data['file_size']]
+        try:
+            for i in range(0, self.NUMBER_SECTION - 1):
+                self.section_raw_data[i] = self.file_raw_data[self.header_data['section_pos'][i]: self.header_data['section_pos'][i + 1]]
 
-        # No need to analyze Section 1 : Skeleton
-        # No need to analyze Section 2 : Model geometry
-        # No need to analyze Section 3 : Model animation
-        # No need to analyze Section 4 : Unknown
-        # No need to analyze Section 5 : Unknown
-        # No need to analyze Section 6 : Unknown
-        # Analyzing Section 7 : Informations & stats
-        self.__analyze_info_stat(game_data)
-        # Analyzing Section 8 : Battle scripts/AI
-        self.__analyze_battle_script_section(game_data)
-        # No need to analyze Section 9 : Sounds
-        # No need to analyze Section 10 : Sounds/Unknown
-        # No need to analyze Section 11 : Textures
+            self.section_raw_data[self.NUMBER_SECTION - 1] = self.file_raw_data[
+                                                             self.header_data['section_pos'][self.NUMBER_SECTION - 1]:self.header_data['file_size']]
+            # No need to analyze Section 1 : Skeleton
+            # No need to analyze Section 2 : Model geometry
+            # No need to analyze Section 3 : Model animation
+            # No need to analyze Section 4 : Unknown
+            # No need to analyze Section 5 : Unknown
+            # No need to analyze Section 6 : Unknown
+            # Analyzing Section 7 : Informations & stats
+            self.__analyze_info_stat(game_data)
+            # Analyzing Section 8 : Battle scripts/AI
+            self.__analyze_battle_script_section(game_data)
+            # No need to analyze Section 9 : Sounds
+            # No need to analyze Section 10 : Sounds/Unknown
+            # No need to analyze Section 11 : Textures
+        except IndexError as e:
+            print(f"Garbage file {self.origin_file_name}")
+            raise GarbageFileError
+        except Exception as e:
+            print(e)
+
 
     def write_data_to_file(self, game_data, path):
         print("Writing monster {}".format(self.info_stat_data["monster_name"]))
