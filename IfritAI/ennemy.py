@@ -74,17 +74,24 @@ class Ennemy():
             print(e)
 
 
-    def write_data_to_file(self, game_data, path):
+    def write_data_to_file(self, game_data:GameData, path):
         print("Writing monster {}".format(self.info_stat_data["monster_name"]))
         raw_data_to_write = bytearray()
 
-        # Write the 8 (0 to 7) first section as raw data
+        # Write the 7 (0 to 6) first section as raw data
         for i, section_data in enumerate(self.section_raw_data):
-            if i < 8:
+            if i < 7:
                 raw_data_to_write.extend(section_data)
             else:
                 break
 
+        # For the 7th, we just want to modify the name
+
+        monster_name_size = game_data.AIData.NAME_DATA['size']
+        if len(self.info_stat_data['monster_name']) < monster_name_size:
+            self.info_stat_data['monster_name'].fill(monster_name_size)
+        self.section_raw_data[7][0:23] = self.info_stat_data['monster_name'].get_data_hex()[0:23]
+        raw_data_to_write.extend(self.section_raw_data[7])
         # Then modify the battle section (text + AI)
         # Saving text
         raw_data_save_text = self.file_raw_data[self.header_data['section_pos'][8] + self.battle_script_data['offset_text_sub']:
