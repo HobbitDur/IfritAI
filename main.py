@@ -2,7 +2,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from ifritai import IfritAI
+from IfritAI.ifritaiwidget import IfritAIWidget
 
 sys._excepthook = sys.excepthook
 def exception_hook(exctype, value, traceback):
@@ -18,5 +18,5 @@ if __name__ == '__main__':
         app = QApplication(sys.argv)
         if app.style().objectName() == "windows11":
             app.setStyle("Fusion")
-    main_window = IfritAI()
+    main_window = IfritAIWidget()
     sys.exit(app.exec())

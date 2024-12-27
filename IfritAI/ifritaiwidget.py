@@ -6,12 +6,12 @@ from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QScrollArea, QPushButton, QFileDialog, QComboBox, QHBoxLayout, QLabel, \
     QColorDialog, QCheckBox
 
-from command import Command
-from commandwidget import CommandWidget
-from ifritmanager import IfritManager
+from IfritAI.command import Command
+from IfritAI.commandwidget import CommandWidget
+from IfritAI.ifritmanager import IfritManager
 
 
-class IfritAI(QWidget):
+class IfritAIWidget(QWidget):
     ADD_LINE_SELECTOR_ITEMS = ["Condition", "Command"]
     MAX_COMMAND_PARAM = 7
     MAX_OP_ID = 61
