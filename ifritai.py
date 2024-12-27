@@ -6,8 +6,8 @@ from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QScrollArea, QPushButton, QFileDialog, QComboBox, QHBoxLayout, QLabel, \
     QColorDialog, QCheckBox
 
-from command.command import Command
-from command.commandwidget import CommandWidget
+from command import Command
+from commandwidget import CommandWidget
 from ifritmanager import IfritManager
 
 
