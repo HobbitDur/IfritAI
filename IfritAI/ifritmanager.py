@@ -1,5 +1,5 @@
 from FF8GameData.gamedata import GameData
-from IfritAI.ennemy import Ennemy
+from .ennemy import Ennemy
 
 
 class IfritManager:
