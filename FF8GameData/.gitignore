@@ -1,0 +1,13 @@
+**/__pycache__/
+**/.idea/
+**/release/**
+**/OriginalFiles
+**/csv/**
+*.txt
+*.exe
+*.bin
+**/Resources/FFNxTripod/**
+*.fs
+*.fi
+*.fl
+*.tim
