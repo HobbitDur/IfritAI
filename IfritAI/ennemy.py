@@ -39,6 +39,12 @@ class Ennemy():
                                            [self.header_data, self.model_animation_data, self.info_stat_data, self.battle_script_data])
 
     def load_file_data(self, file, game_data):
+        self.subsection_ai_offset = {'init_code': 0, 'ennemy_turn': 0, 'counter_attack': 0, 'death': 0, 'unknown': 0}
+        self.section_raw_data = [bytearray()] * self.NUMBER_SECTION
+        self.header_data = copy.deepcopy(game_data.AIData.SECTION_HEADER_DICT)
+        self.model_animation_data = copy.deepcopy(game_data.AIData.SECTION_MODEL_ANIM_DICT)
+        self.info_stat_data = copy.deepcopy(game_data.AIData.SECTION_INFO_STAT_DICT)
+        self.battle_script_data = copy.deepcopy(game_data.AIData.SECTION_BATTLE_SCRIPT_DICT)
         self.file_raw_data = bytearray()
         with open(file, "rb") as f:
             while el := f.read(1):

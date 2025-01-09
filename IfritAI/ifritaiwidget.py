@@ -212,6 +212,10 @@ class IfritAIWidget(QWidget):
             if command_widget.command.get_id() == 2:
                 if_index += 1
 
+    def __reset_if(self):
+        for command_widget in self.command_line_widget:
+            command_widget.set_if_index(0)
+
     def qsort_command_widget(self, inlist: [CommandWidget]):
         if inlist == []:
             return []
@@ -229,6 +233,7 @@ class IfritAIWidget(QWidget):
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
         if file_to_load:
+            self.__clear__lines()
             self.ifrit_manager.init_from_file(file_to_load)
             self.monster_name_label.setText(
                 "Monster : {}, file: {}".format(self.ifrit_manager.ennemy.info_stat_data['monster_name'],
@@ -238,7 +243,6 @@ class IfritAIWidget(QWidget):
             self.__setup_section_data()
 
     def __reload_file(self):
-        self.__clear__lines()
         self.__load_file(self.file_loaded)
 
     def __clear__lines(self):
@@ -264,6 +268,7 @@ class IfritAIWidget(QWidget):
             for command in self.ifrit_manager.ai_data[index_section]:
                 command.line_index = line_index
                 command.set_color(self.ifrit_manager.game_data.AIData.COLOR)
+                print("Setup section data adding line")
                 self.__add_line(command)
                 line_index += 1
         if self.expert_selector.isChecked():

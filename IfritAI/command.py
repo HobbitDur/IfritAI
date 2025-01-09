@@ -30,11 +30,22 @@ class Command:
     def __repr__(self):
         return self.__str__()
 
+    def reset_data(self):
+        self.was_physical = False
+        self.was_magic = False
+        self.was_item = False
+        self.was_gforce = False
+        self.param_possible_list = []
+        self.__text = ""
+        self.__if_index = 0
+        self.type_data = []
+
     def set_color(self, color):
         self.__color_param = color
         self.__analyse_op_data()
 
     def set_op_id(self, op_id):
+        self.reset_data()
         self.__op_id = op_id
         op_info = self.__get_op_code_line_info()
         self.__op_code = [0] * op_info["size"]
@@ -43,6 +54,7 @@ class Command:
         self.__analyse_op_data()
 
     def set_op_code(self, op_code):
+        self.reset_data()
         self.__op_code = op_code
         self.__analyse_op_data()
 
@@ -69,7 +81,7 @@ class Command:
         return op_research
 
     def __analyse_op_data(self):
-        self.param_possible_list = []
+        self.reset_data()
         op_info = self.__get_op_code_line_info()
         # Searching for errors in json file
         if len(op_info["param_type"]) != op_info["size"] and op_info['complexity'] == 'simple':
@@ -140,32 +152,31 @@ class Command:
             self.__text += " (size:{}bytes)".format(op_info['size'] + 1)
 
     def __get_possible_target(self):
-        return  [x for x in self.__get_target_list()]
+        return [x for x in self.__get_target_list()]
 
     def __get_possible_var(self):
-        return  [{"id": x['op_code'], "data": x['var_name']} for x in self.game_data.ai_data_json["list_var"]]
+        return [{"id": x['op_code'], "data": x['var_name']} for x in self.game_data.ai_data_json["list_var"]]
 
     def __get_possible_magic(self):
-        return  [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.magic_data_json["magic"])]
+        return [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.magic_data_json["magic"])]
 
     def __get_possible_magic_type(self):
-        return  [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.magic_data_json["magic_type"])]
+        return [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.magic_data_json["magic_type"])]
 
     def __get_possible_item(self):
-        return   [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.item_data_json["items"])]
+        return [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.item_data_json["items"])]
 
     def __get_possible_gforce(self):
-        return  [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.gforce_data_json["gforce"])]
+        return [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.gforce_data_json["gforce"])]
 
     def __get_possible_monster(self):
-        return  [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.monster_data_json["monster"])]
+        return [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.monster_data_json["monster"])]
 
     def __get_possible_card(self):
-        return   [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.card_data_json["card_info"])]
+        return [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.card_data_json["card_info"])]
 
     def __get_possible_special_action(self):
-        return   [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.special_action_data_json["special_action"])]
-
+        return [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.special_action_data_json["special_action"])]
 
     def __op_23_analysis(self, op_code):
         if op_code[0] > 0:
@@ -341,8 +352,9 @@ class Command:
             elif op_code[1] == 1:
                 attack_right_condition_param = [self.__get_target(op_code_right_condition_param)]
                 list_param_possible_right.extend(self.__get_possible_target())
-            elif op_code[1] == 3: # Need to handle better the was_magic
-                list_param_possible_right.extend([{"id":1 , "data":"Physical damage"},{"id":2 , "data":"Magical damage"},{"id":4 , "data":"Item"},{"id":254 , "data":"G-Force"}])
+            elif op_code[1] == 3:  # Need to handle better the was_magic
+                list_param_possible_right.extend(
+                    [{"id": 1, "data": "Physical damage"}, {"id": 2, "data": "Magical damage"}, {"id": 4, "data": "Item"}, {"id": 254, "data": "G-Force"}])
                 if op_code_right_condition_param == 1:
                     attack_right_condition_param = ["Physical damage"]
                     self.was_physical = True
@@ -452,10 +464,20 @@ class Command:
 
     def __get_target_list(self, reverse=False):
         list_target = []
+        # The target list has 4 different type of target:
+        # 1. The characters
+        # 2. All monsters of the game
+        # 3. Special target
+        # 4. Target stored in variable
         for i in range(len(self.game_data.ai_data_json['list_target_char'])):
             list_target.append({"id": i, "data": self.game_data.ai_data_json['list_target_char'][i]})
         for i in range(0, len(self.game_data.monster_data_json["monster"])):
             list_target.append({"id": i + 16, "data": self.game_data.monster_data_json["monster"][i]["name"]})
+        number_of_generic_var_read = 0
+        for var_data in self.game_data.ai_data_json['list_var']:
+            if var_data['op_code'] == 220 + number_of_generic_var_read:
+                list_target.append({"id": number_of_generic_var_read + 220, "data": "TARGET TYPE IN: " + var_data['var_name']})
+
         for el in self.game_data.ai_data_json['target_special']:
             if el['param_type'] == "reverse":  # C8 data
                 if reverse:
@@ -476,6 +498,7 @@ class Command:
                 text = el['text']
             list_target.append({"id": el['param_id'], "data": text})
         return list_target
+
 
     def __get_target(self, id, reverse=False):
         target = [x['data'] for x in self.__get_target_list(reverse) if x['id'] == id]
