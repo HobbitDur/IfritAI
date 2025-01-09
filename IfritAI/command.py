@@ -92,16 +92,13 @@ class Command:
                 op_index = op_info["param_index"][index]
                 self.type_data.append(type)
                 if type == "int":
-                    print("int")
                     param_value.append(str(self.__op_code[op_index]))
                     self.param_possible_list.append([])
-                    print(self.param_possible_list)
                 elif type == "var":
                     # There is specific var known, if not in the list it means it's a generic one
                     param_value.append(self.__get_var_name(self.__op_code[op_index]))
                     param_list = [{"id": x['op_code'], "data": x['var_name']} for x in
                                   self.game_data.ai_data_json["list_var"]]
-                    self.param_possible_list.append(param_list)
                 elif type == "special_action":
                     if self.__op_code[op_index] < len(self.game_data.special_action_data_json["special_action"]):
                         param_value.append(self.game_data.special_action_data_json["special_action"][self.__op_code[op_index]]['name'])
@@ -110,16 +107,12 @@ class Command:
                     else:
                         param_value.append("UNKNOWN SPECIAL_ACTION")
                 elif type == "monster_line_ability":
-                    print("monster_line_ability")
                     possible_ability_values = []
-                    print(self.info_stat_data['abilities_high'])
                     nb_ability_high = len([x for x in self.info_stat_data['abilities_high'] if x['id'] !=0])
                     nb_ability_med = len([x for x in self.info_stat_data['abilities_med'] if x['id'] !=0])
                     nb_ability_low = len([x for x in self.info_stat_data['abilities_low'] if x['id'] !=0])
                     nb_abilities = max(nb_ability_high, nb_ability_med, nb_ability_low)
-                    print(nb_abilities)
                     for i in range(nb_abilities):
-                        print(f"i: {i}")
                         if self.info_stat_data['abilities_high'][i] != 0:
                             if self.info_stat_data['abilities_high'][i]['type'] == 2:  # Magic
                                 high_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_high'][i]['id']]['name']
@@ -157,12 +150,10 @@ class Command:
                         possible_ability_values.append({'id': i, 'data': text})
                         if self.__op_code[op_index] == i:
                             param_value.append(text)
-                            print(f"param_value: {param_value}")
                     if self.__op_code[op_index] > nb_abilities:
                         param_value.append("None")
                     possible_ability_values.append({'id': 253, 'data': "None"})# 253 for None value is often used by monsters.
                     self.param_possible_list.append(possible_ability_values)
-                    print(self.param_possible_list)
                 elif type == "ability":
                     if self.__op_code[op_index] < len(self.game_data.enemy_abilities_data_json["abilities"]):
                         param_value.append(self.game_data.enemy_abilities_data_json["abilities"][self.__op_code[op_index]]['name'])
@@ -206,11 +197,6 @@ class Command:
                     param_value.append(self.__op_code[op_index])
             for i in range(len(param_value)):
                 param_value[i] = '<span style="color:' + self.__color_param + ';">' + param_value[i] + '</span>'
-                print(param_value)
-            print("before fina ltext")
-            print(op_info['text'])
-            print(param_value)
-            print(len(param_value))
             self.__text = (op_info['text'] + " (size:{}bytes)").format(*param_value, op_info['size'] + 1)
         elif op_info["complexity"] == "complex":
             call_function = getattr(self, "_Command__op_" + "{:02}".format(op_info["op_code"]) + "_analysis")
@@ -325,13 +311,13 @@ class Command:
     def __op_01_analysis(self, op_code):
         if op_code[0] < len(self.__battle_text):
             ret = 'SHOW BATTLE TEXT: {}'
-            param_return = [self.__battle_text[op_code[0]]]
+            param_return = [self.__battle_text[op_code[0]].get_str()]
         else:
             ret = "/!\\SHOW BATTLE BUT NO BATTLE TO SHOW"
             param_return = []
         possible_param = []
         for i in range(len(self.__battle_text)):
-            possible_param.append({'id': i, 'data': self.__battle_text[i]})
+            possible_param.append({'id': i, 'data': self.__battle_text[i].get_str()})
         self.param_possible_list.append(possible_param)
         return [ret, param_return]
 
@@ -420,6 +406,8 @@ class Command:
             elif op_code[1] == 1:
                 attack_right_condition_param = [self.__get_target(op_code_right_condition_param)]
                 list_param_possible_right.extend(self.__get_possible_target())
+            elif op_code[1] == 2:
+                attack_left_condition_param = attack_left_condition_param.format(self.info_stat_data['monster_name'].get_str())
             elif op_code[1] == 3:  # Need to handle better the was_magic
                 list_param_possible_right.extend(
                     [{"id": 1, "data": "Physical damage"}, {"id": 2, "data": "Magical damage"}, {"id": 4, "data": "Item"}, {"id": 254, "data": "G-Force"}])
@@ -519,7 +507,7 @@ class Command:
             ret = 'auto-boomerang'
         else:
             ret = "unknown flag {}".format(op_code[0])
-        return ['MAKE {} of {} to {}', [ret, self.info_stat_data['monster_name'], op_code[1]]]
+        return ['MAKE {} of {} to {}', [ret, self.info_stat_data['monster_name'].get_str(), op_code[1]]]
 
     def __get_var_name(self, id):
         # There is specific var known, if not in the list it means it's a generic one
@@ -553,9 +541,9 @@ class Command:
                     data = [x['text'] for x in self.game_data.ai_data_json['target_special'] if x['param_id'] == 204][
                                0] + "(by reverse)"  # Same than param id 204. No check as we are sure 204 is there
                 else:
-                    data = self.info_stat_data['monster_name']
+                    data = self.info_stat_data['monster_name'].get_str()
             elif el['param_type'] == "monster_name":  # Same than param id 204
-                data = self.info_stat_data['monster_name']
+                data = self.info_stat_data['monster_name'].get_str()
             elif el['param_type'] == "":
                 data = None
             else:

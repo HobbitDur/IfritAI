@@ -15,12 +15,13 @@ class CommandWidget(QWidget):
     MAX_OP_CODE_VALUE = 255
     MIN_OP_CODE_VALUE = 0
 
-    def __init__(self, command: Command):
+    def __init__(self, command: Command, expert_chosen=False, print_hex = False):
         QWidget.__init__(self)
 
         # Parameters
         self.command = command
-        self.expert_chosen = False
+        self._expert_chosen = expert_chosen
+        self._print_hex = print_hex
 
         # signal
         self.op_id_changed_signal_emitter = OpIdChangedEmmiter()
@@ -77,12 +78,17 @@ class CommandWidget(QWidget):
         self.layout_text_spacing.addSpacing(if_index * 20)
 
     def change_expert(self, expert_chosen):
-        self.expert_chosen = expert_chosen
+        self._expert_chosen = expert_chosen
+        self.__reset_op_id_widget()
+        self.__reset_op_code_widget()
+
+    def change_print_hex(self, print_hex):
+        self._print_hex = print_hex
         self.__reset_op_id_widget()
         self.__reset_op_code_widget()
 
     def __op_id_change(self):
-        if self.expert_chosen:
+        if self._expert_chosen:
             self.command.set_op_id(self.op_id_widget.value())
         else:
             dict_data = [x["id"] for x in self.command.id_possible_list if x["data"] == self.op_id_widget.currentText()]
@@ -113,7 +119,7 @@ class CommandWidget(QWidget):
     def __reset_op_id_widget(self):
         self.op_id_widget.setParent(None)
         self.op_id_widget.deleteLater()
-        if not self.expert_chosen and self.command.id_possible_list:
+        if not self._expert_chosen and self.command.id_possible_list:
             self.op_id_widget = QComboBox()
             self.op_id_widget.addItems([x['data'] for x in self.command.id_possible_list])
             self.op_id_widget.setFixedSize(80, 30)
@@ -129,11 +135,15 @@ class CommandWidget(QWidget):
         else:
             self.op_id_widget = QSpinBox()
             self.op_id_widget.setFixedSize(50, 30)
-            self.op_id_widget.setValue(self.command.get_id())
             self.op_id_widget.setMaximum(self.MAX_OP_ID)
             self.op_id_widget.setMinimum(self.MIN_OP_ID)
-            self.op_id_widget.valueChanged.connect(self.__op_id_change)
+
             self.op_id_widget.wheelEvent = lambda event: None
+            if self._print_hex:
+                self.op_id_widget.valueFromText = self.valueFromTextHex
+                self.op_id_widget.textFromValue = self.textFromValueHex
+            self.op_id_widget.setValue(self.command.get_id())
+            self.op_id_widget.valueChanged.connect(self.__op_id_change)
 
         self.layout_id.insertWidget(0, self.op_id_widget)
 
@@ -145,7 +155,7 @@ class CommandWidget(QWidget):
                 self.widget_op_code[i].setParent(None)
                 self.widget_op_code[i].deleteLater()
                 del self.widget_op_code[i]
-            if not self.expert_chosen and self.command.param_possible_list and len(
+            if not self._expert_chosen and self.command.param_possible_list and len(
                     self.command.param_possible_list) > i and self.command.param_possible_list[i]:
                 self.widget_op_code.insert(i, QComboBox())
                 items = []
@@ -166,6 +176,9 @@ class CommandWidget(QWidget):
                 self.widget_op_code[i].setMaximum(self.MAX_OP_CODE_VALUE)
                 self.widget_op_code[i].setMinimum(self.MIN_OP_CODE_VALUE)
                 self.widget_op_code[i].wheelEvent = lambda event: None
+                if self._print_hex:
+                    self.widget_op_code[i].valueFromText = self.valueFromTextHex
+                    self.widget_op_code[i].textFromValue = self.textFromValueHex
 
                 if i < len(self.command.get_op_code()):
                     self.widget_op_code[i].setValue(self.command.get_op_code()[i])
@@ -174,7 +187,7 @@ class CommandWidget(QWidget):
                 self.widget_op_code[i].valueChanged.connect(self.__op_code_change)
             if i > 5:  # Only if has more than 5 parameters
                 self.widget_op_code[i].setFixedSize(50, 30)
-            elif self.expert_chosen:
+            elif self._expert_chosen:
                 self.widget_op_code[i].setFixedSize(50, 30)
             else:
                 self.widget_op_code[i].setFixedSize(80, 30)
@@ -185,6 +198,14 @@ class CommandWidget(QWidget):
                 self.widget_op_code[i].hide()
 
             self.layout_op_code.insertWidget(i, self.widget_op_code[i])
+
+    @staticmethod
+    def valueFromTextHex(val):
+        return int(val, 16)
+
+    @staticmethod
+    def textFromValueHex(val):
+        return "0x{:02X}".format(val)
 
     def __get_largest_size_from_combobox(self, combo_box: QComboBox):
         largest = 0

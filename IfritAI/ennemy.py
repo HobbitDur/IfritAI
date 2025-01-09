@@ -1,6 +1,7 @@
 import copy
 import os
 
+from FF8GameData.GenericSection.ff8text import FF8Text
 from FF8GameData.gamedata import GameData
 from .command import Command
 
@@ -221,7 +222,7 @@ class Ennemy():
             raw_data_selected = self.__get_raw_value_from_info(el, SECTION_NUMBER)
             data_size = len(raw_data_selected)
             if el['name'] in ['monster_name']:
-                value = game_data.translate_hex_to_str(raw_data_selected)
+                value = FF8Text(game_data=game_data, own_offset=0, data_hex=raw_data_selected, id=0)
             elif el['name'] in ([x['name'] for x in game_data.stat_data_json['stat']] + ['card', 'devour']):
                 value = list(raw_data_selected)
             elif el['name'] in ['med_lvl', 'high_lvl', 'extra_xp', 'xp', 'ap', ]:
@@ -310,7 +311,7 @@ class Ennemy():
                     else:
                         break
             if combat_text_raw_data:
-                self.battle_script_data['battle_text'].append(game_data.translate_hex_to_str(combat_text_raw_data))
+                self.battle_script_data['battle_text'].append(FF8Text(game_data=game_data, own_offset=0, data_hex=combat_text_raw_data, id=0))
             else:
                 self.battle_script_data['battle_text'] = []
 

@@ -85,6 +85,7 @@ class IfritAIWidget(QWidget):
         self.layout_top.addWidget(self.reset_button)
         self.layout_top.addWidget(self.button_color_picker)
         self.layout_top.addWidget(self.expert_selector)
+        self.layout_top.addWidget(self.hex_selector)
         self.layout_top.addWidget(self.script_section)
         self.layout_top.addWidget(self.monster_name_label)
         self.layout_top.addStretch(1)
@@ -111,7 +112,7 @@ class IfritAIWidget(QWidget):
     def __change_hex(self):
         hex_chosen = self.hex_selector.isChecked()
         for line in self.command_line_widget:
-            line.change_hex(hex_chosen)
+            line.change_print_hex(hex_chosen)
 
     def __select_color(self):
         color = QColorDialog.getColor()
@@ -150,7 +151,7 @@ class IfritAIWidget(QWidget):
         # Creating new element to list
         self.add_button_widget.insert(command.line_index, add_button)
         self.remove_button_widget.insert(command.line_index, remove_button)
-        command_widget = CommandWidget(command)
+        command_widget = CommandWidget(command, self.expert_selector.isChecked(), self.hex_selector.isChecked())
         command_widget.op_id_changed_signal_emitter.op_id_signal.connect(self.__compute_if)
         self.command_line_widget.insert(command.line_index, command_widget)
         self.ai_line_layout.insert(command.line_index, QHBoxLayout())
@@ -228,7 +229,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        #file_to_load = os.path.join("OriginalFiles", "c0m001.dat") # For developing faster
+        file_to_load = os.path.join("OriginalFiles", "c0m074.dat") # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
@@ -236,7 +237,7 @@ class IfritAIWidget(QWidget):
             self.__clear__lines()
             self.ifrit_manager.init_from_file(file_to_load)
             self.monster_name_label.setText(
-                "Monster : {}, file: {}".format(self.ifrit_manager.ennemy.info_stat_data['monster_name'],
+                "Monster : {}, file: {}".format(self.ifrit_manager.ennemy.info_stat_data['monster_name'].get_str(),
                                                 pathlib.Path(file_to_load).name))
             self.monster_name_label.show()
             self.file_loaded = file_to_load
@@ -270,8 +271,6 @@ class IfritAIWidget(QWidget):
                 command.set_color(self.ifrit_manager.game_data.AIData.COLOR)
                 self.__add_line(command)
                 line_index += 1
-        if self.expert_selector.isChecked():
-            self.__change_expert()
         self.__compute_if()
 
     def __set_title(self):
