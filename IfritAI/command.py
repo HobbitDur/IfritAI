@@ -3,7 +3,7 @@ from FF8GameData.gamedata import GameData
 
 class Command:
 
-    def __init__(self, op_id: int, op_code: list, game_data: GameData, battle_text=(), info_stat_data_monster_name="",
+    def __init__(self, op_id: int, op_code: list, game_data: GameData, battle_text=(), info_stat_data={},
                  line_index=0, color="#0055ff"):
         self.__op_id = op_id
         self.__op_code = op_code
@@ -11,7 +11,7 @@ class Command:
         self.__text = ""
         self.__text_colored = ""
         self.game_data = game_data
-        self.info_stat_data_monster_name = info_stat_data_monster_name
+        self.info_stat_data = info_stat_data
         self.__color_param = color
         self.line_index = line_index
         self.__if_index = 0
@@ -107,6 +107,57 @@ class Command:
                             [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.special_action_data_json["special_action"])])
                     else:
                         param_value.append("UNKNOWN SPECIAL_ACTION")
+                elif type == "monster_line_ability":
+                    possible_ability_values = []
+                    for i in range(max(len(self.info_stat_data['abilities_high']), len(self.info_stat_data['abilities_med']), len(self.info_stat_data['abilities_low']))):
+                        if self.info_stat_data['abilities_high'][i]['id'] == 0 and self.info_stat_data['abilities_med'][i]['id'] == 0 and self.info_stat_data['abilities_med'][i][
+                            'id'] == 0:
+                            continue
+                        if self.info_stat_data['abilities_high'][i] != 0:
+                            if self.info_stat_data['abilities_high'][i]['type'] == 2:  # Magic
+                                high_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_high'][i]['id']]['name']
+                            elif self.info_stat_data['abilities_high'][i]['type'] == 4:  # Item
+                                high_text = self.game_data.item_data_json["items"][self.info_stat_data['abilities_high'][i]['id']]['name']
+                            elif self.info_stat_data['abilities_high'][i]['type'] == 8:  # Item
+                                high_text = self.game_data.enemy_abilities_data_json["abilities"][self.info_stat_data['abilities_high'][i]['id']]['name']
+                            else:
+                                high_text = "Unexpected type ability"
+                        else:
+                            high_text = "None"
+                        if self.info_stat_data['abilities_med'][i] != 0:
+                            if self.info_stat_data['abilities_med'][i]['type'] == 2:  # Magic
+                                med_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_med'][i]['id']]['name']
+                            elif self.info_stat_data['abilities_med'][i]['type'] == 4:  # Item
+                                med_text = self.game_data.item_data_json["items"][self.info_stat_data['abilities_med'][i]['id']]['name']
+                            elif self.info_stat_data['abilities_med'][i]['type'] == 8:  # Item
+                                med_text = self.game_data.enemy_abilities_data_json["abilities"][self.info_stat_data['abilities_med'][i]['id']]['name']
+                            else:
+                                med_text = "Unexpected type ability"
+                        else:
+                            med_text = "None"
+                        if self.info_stat_data['abilities_low'][i] != 0:
+                            if self.info_stat_data['abilities_low'][i]['type'] == 2:  # Magic
+                                low_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_low'][i]['id']]['name']
+                            elif self.info_stat_data['abilities_low'][i]['type'] == 4:  # Item
+                                low_text = self.game_data.item_data_json["items"][self.info_stat_data['abilities_low'][i]['id']]['name']
+                            elif self.info_stat_data['abilities_low'][i]['type'] == 8:  # Item
+                                low_text = self.game_data.enemy_abilities_data_json["abilities"][self.info_stat_data['abilities_low'][i]['id']]['name']
+                            else:
+                                low_text = "Unexpected type ability"
+                        else:
+                            low_text = "None"
+                        text = f"Low: {low_text} | Med: {med_text} | High: {high_text}"
+                        possible_ability_values.append({'id': i, 'data': text})
+                        if self.__op_code[op_index] == i:
+                            param_value.append(text)
+                    self.param_possible_list.append(possible_ability_values)
+                elif type == "ability":
+                    if self.__op_code[op_index] < len(self.game_data.enemy_abilities_data_json["abilities"]):
+                        param_value.append(self.game_data.enemy_abilities_data_json["abilities"][self.__op_code[op_index]]['name'])
+                        self.param_possible_list.append(
+                            [{'id': id, 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.enemy_abilities_data_json["abilities"])])
+                    else:
+                        param_value.append("UNKNOWN CARD")
                 elif type == "card":
                     if self.__op_code[op_index] < len(self.game_data.card_data_json["card_info"]):
                         param_value.append(self.game_data.card_data_json["card_info"][self.__op_code[op_index]]['name'])
@@ -334,7 +385,7 @@ class Command:
             right_subject = {'text': '{}', 'param': [self.__get_target(op_code[3])]}
         elif subject_id == 10:
             attack_left_text = "{}"
-            attack_left_condition_param = [str(op_code[1])]
+            attack_left_condition_param = str(op_code[1])
             attack_right_text = "{}"
             attack_right_condition_param = [str(op_code[3])]
             subject_left_data = [x['text'] for x in self.game_data.ai_data_json['subject_left_10'] if x['param_id'] == op_code[1]]
@@ -396,6 +447,7 @@ class Command:
                 list_param_possible_right.extend(self.__get_possible_magic_type())
             else:
                 attack_left_text = "Unknown attack type {}"
+                attack_left_condition_param = str(op_code[1])
                 attack_right_condition_param = [op_code_right_condition_param]
 
             left_subject = {'text': attack_left_text, 'param': attack_left_condition_param}
@@ -450,7 +502,7 @@ class Command:
             ret = 'auto-boomerang'
         else:
             ret = "unknown flag {}".format(op_code[0])
-        return ['MAKE {} of {} to {}', [ret, self.info_stat_data_monster_name, op_code[1]]]
+        return ['MAKE {} of {} to {}', [ret, self.info_stat_data['monster_name'], op_code[1]]]
 
     def __get_var_name(self, id):
         # There is specific var known, if not in the list it means it's a generic one
@@ -484,9 +536,9 @@ class Command:
                     data = [x['text'] for x in self.game_data.ai_data_json['target_special'] if x['param_id'] == 204][
                                0] + "(by reverse)"  # Same than param id 204. No check as we are sure 204 is there
                 else:
-                    data = self.info_stat_data_monster_name
+                    data = self.info_stat_data['monster_name']
             elif el['param_type'] == "monster_name":  # Same than param id 204
-                data = self.info_stat_data_monster_name
+                data = self.info_stat_data['monster_name']
             elif el['param_type'] == "":
                 data = None
             else:
@@ -498,7 +550,6 @@ class Command:
                 text = el['text']
             list_target.append({"id": el['param_id'], "data": text})
         return list_target
-
 
     def __get_target(self, id, reverse=False):
         target = [x['data'] for x in self.__get_target_list(reverse) if x['id'] == id]

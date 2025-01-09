@@ -228,7 +228,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        #file_to_load = os.path.join("OriginalFiles", "c0m061.dat") # For developing faster
+        #file_to_load = os.path.join("OriginalFiles", "c0m001.dat") # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
@@ -268,7 +268,6 @@ class IfritAIWidget(QWidget):
             for command in self.ifrit_manager.ai_data[index_section]:
                 command.line_index = line_index
                 command.set_color(self.ifrit_manager.game_data.AIData.COLOR)
-                print("Setup section data adding line")
                 self.__add_line(command)
                 line_index += 1
         if self.expert_selector.isChecked():

@@ -1,0 +1,93 @@
+name: Auto-release
+
+on:
+  push:
+    branches: [ "master" ]
+    tags:
+      - "*"
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  release-version:
+      runs-on: windows-latest
+      steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: recursive submodule
+        shell: bash
+        run: |
+          ls -al IfritAI/ 
+          git submodule update --init --recursive
+          ls -al IfritAI/
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r IfritAI/requirements.txt
+          pip install pyinstaller
+          python --version
+          pip freeze
+      - uses: milliewalky/setup-7-zip@v1
+      - name: Create ai release
+        shell: bash
+        run: |
+          cd IfritAI/
+          pyinstaller -n IfritAI -F --specpath release/build --distpath release --workpath release/build --onefile --icon=../../Resources/icon.ico main.py
+          mkdir -p release/FF8GameData
+          mkdir OriginalFiles/
+          cp -R Resources release/
+          cp -R FF8GameData/Resources release/FF8GameData/
+          cd release
+          rm -r build
+          ls -al
+          cd ..
+      - name: Create full release - Start
+        shell: bash
+        run: |
+          mkdir -p release/IfritAI
+          cp -R IfritAI/release/* release/
+          rm -rf IfritAI/release
+      - name: zip name continuous
+        shell: bash
+        if: github.event.ref_type != 'tag' && github.ref == 'refs/heads/master'
+        run: |
+          cd release/
+          7z  a -tzip "../IfritAI-continuous-${{ github.sha}}.zip" .
+          pwd
+          cd ..
+          ls -al
+          cd ..
+          ls -al
+      - name: zip name tag
+        shell: bash
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd release/
+          7z  a -tzip "../IfritAI-${{  github.ref_name }}.zip" .
+      - name: Deploy Package
+        if: github.event.ref_type != 'tag' && github.ref == 'refs/heads/master'
+        uses: crowbarmaster/GH-Automatic-Releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "continuous"
+          prerelease: true
+          title: "Unstable Build"
+          files: |
+            release/IfritAI-*.zip
+      - name: Deploy tag Package
+        if:  startsWith(github.ref, 'refs/tags/')
+        uses: crowbarmaster/GH-Automatic-Releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          automatic_release_tag: ${{ github.ref_name }}
+          title: "IfritEnhanced-${{ github.ref_name }}"
+          files: |
+            release/IfritAI-*.zip

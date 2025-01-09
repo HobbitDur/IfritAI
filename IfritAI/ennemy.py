@@ -354,7 +354,7 @@ class Ennemy():
                     start_param = index_read + 1
                     end_param = index_read + 1 + op_code_ref['size']
                     command = Command(code[index_read], code[start_param:end_param], game_data=game_data, battle_text=self.battle_script_data['battle_text'],
-                                      info_stat_data_monster_name=self.info_stat_data['monster_name'], color=game_data.AIData.COLOR)
+                                      info_stat_data=self.info_stat_data, color=game_data.AIData.COLOR)
                     list_result.append(command)
                     index_read += 1 + op_code_ref['size']
             self.battle_script_data['ai_data'].append(list_result)
