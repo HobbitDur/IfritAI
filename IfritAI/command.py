@@ -160,7 +160,7 @@ class Command:
                             print(f"param_value: {param_value}")
                     if self.__op_code[op_index] > nb_abilities:
                         param_value.append("None")
-                    possible_ability_values.append({'id': 253, 'data': "None"})
+                    possible_ability_values.append({'id': 253, 'data': "None"})# 253 for None value is often used by monsters.
                     self.param_possible_list.append(possible_ability_values)
                     print(self.param_possible_list)
                 elif type == "ability":
