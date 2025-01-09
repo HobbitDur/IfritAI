@@ -92,8 +92,10 @@ class Command:
                 op_index = op_info["param_index"][index]
                 self.type_data.append(type)
                 if type == "int":
+                    print("int")
                     param_value.append(str(self.__op_code[op_index]))
                     self.param_possible_list.append([])
+                    print(self.param_possible_list)
                 elif type == "var":
                     # There is specific var known, if not in the list it means it's a generic one
                     param_value.append(self.__get_var_name(self.__op_code[op_index]))
@@ -108,11 +110,16 @@ class Command:
                     else:
                         param_value.append("UNKNOWN SPECIAL_ACTION")
                 elif type == "monster_line_ability":
+                    print("monster_line_ability")
                     possible_ability_values = []
-                    for i in range(max(len(self.info_stat_data['abilities_high']), len(self.info_stat_data['abilities_med']), len(self.info_stat_data['abilities_low']))):
-                        if self.info_stat_data['abilities_high'][i]['id'] == 0 and self.info_stat_data['abilities_med'][i]['id'] == 0 and self.info_stat_data['abilities_med'][i][
-                            'id'] == 0:
-                            continue
+                    print(self.info_stat_data['abilities_high'])
+                    nb_ability_high = len([x for x in self.info_stat_data['abilities_high'] if x['id'] !=0])
+                    nb_ability_med = len([x for x in self.info_stat_data['abilities_med'] if x['id'] !=0])
+                    nb_ability_low = len([x for x in self.info_stat_data['abilities_low'] if x['id'] !=0])
+                    nb_abilities = max(nb_ability_high, nb_ability_med, nb_ability_low)
+                    print(nb_abilities)
+                    for i in range(nb_abilities):
+                        print(f"i: {i}")
                         if self.info_stat_data['abilities_high'][i] != 0:
                             if self.info_stat_data['abilities_high'][i]['type'] == 2:  # Magic
                                 high_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_high'][i]['id']]['name']
@@ -150,7 +157,12 @@ class Command:
                         possible_ability_values.append({'id': i, 'data': text})
                         if self.__op_code[op_index] == i:
                             param_value.append(text)
+                            print(f"param_value: {param_value}")
+                    if self.__op_code[op_index] > nb_abilities:
+                        param_value.append("None")
+                    possible_ability_values.append({'id': 253, 'data': "None"})
                     self.param_possible_list.append(possible_ability_values)
+                    print(self.param_possible_list)
                 elif type == "ability":
                     if self.__op_code[op_index] < len(self.game_data.enemy_abilities_data_json["abilities"]):
                         param_value.append(self.game_data.enemy_abilities_data_json["abilities"][self.__op_code[op_index]]['name'])
@@ -194,6 +206,11 @@ class Command:
                     param_value.append(self.__op_code[op_index])
             for i in range(len(param_value)):
                 param_value[i] = '<span style="color:' + self.__color_param + ';">' + param_value[i] + '</span>'
+                print(param_value)
+            print("before fina ltext")
+            print(op_info['text'])
+            print(param_value)
+            print(len(param_value))
             self.__text = (op_info['text'] + " (size:{}bytes)").format(*param_value, op_info['size'] + 1)
         elif op_info["complexity"] == "complex":
             call_function = getattr(self, "_Command__op_" + "{:02}".format(op_info["op_code"]) + "_analysis")
