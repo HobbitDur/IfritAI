@@ -332,7 +332,12 @@ class Command:
             else:
                 attack_left_condition_param = subject_left_data[0][0]
             if op_code[1] == 0:
-                attack_right_condition_param = [str(op_code[3])]
+                list_param_possible_right.extend(
+                    [{"id": 0, "data": "Physical"}, {"id": 1, "data": "Magical"}])
+                if op_code[3] == 0:
+                    attack_right_condition_param = ['Physical']
+                if op_code[3] == 1:
+                    attack_right_condition_param = ['Magical']
             elif op_code[1] == 1:
                 attack_right_condition_param = [self.__get_target(op_code_right_condition_param)]
                 list_param_possible_right.extend(self.__get_possible_target())

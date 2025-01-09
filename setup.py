@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='IfritAI',                 # The package name
-    version='2.1.3',                # Version number
+    version='2.1.4',                # Version number
     packages=find_packages(),       # Automatically discover all packages and subpackages
     description='AI modifiers for FF8 monsters',  # Short description
     author='hobbitdur',             # Author's name

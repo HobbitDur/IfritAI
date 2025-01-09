@@ -69,6 +69,12 @@ class IfritAIWidget(QWidget):
         self.expert_selector.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.expert_selector.toggled.connect(self.__change_expert)
 
+        self.hex_selector = QCheckBox()
+        self.hex_selector.setChecked(False)
+        self.hex_selector.setText("Hex value")
+        self.hex_selector.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.hex_selector.toggled.connect(self.__change_hex)
+
         self.monster_name_label = QLabel()
         self.monster_name_label.hide()
 
@@ -101,6 +107,11 @@ class IfritAIWidget(QWidget):
         expert_chosen = self.expert_selector.isChecked()
         for line in self.command_line_widget:
             line.change_expert(expert_chosen)
+
+    def __change_hex(self):
+        hex_chosen = self.hex_selector.isChecked()
+        for line in self.command_line_widget:
+            line.change_hex(hex_chosen)
 
     def __select_color(self):
         color = QColorDialog.getColor()
