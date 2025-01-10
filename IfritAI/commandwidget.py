@@ -113,8 +113,7 @@ class CommandWidget(QWidget):
                 print("Unexpected widget with type: {}".format(type(self.widget_op_code[i])))
         self.command.set_op_code(op_code)
         self.widget_text.setText(self.command.get_text())
-        if self.command.get_id() == 2:  # If an if, reset the left condition as it can change of type
-            self.__reset_op_code_widget((1,))
+        self.__reset_op_code_widget()
 
     def __reset_op_id_widget(self):
         self.op_id_widget.setParent(None)
@@ -151,6 +150,7 @@ class CommandWidget(QWidget):
         if not list_to_reset:
             list_to_reset = range(self.MAX_COMMAND_PARAM)
         for i in list_to_reset:
+
             if i < len(self.widget_op_code):
                 self.widget_op_code[i].setParent(None)
                 self.widget_op_code[i].deleteLater()
