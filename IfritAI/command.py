@@ -1,5 +1,3 @@
-import html
-
 from FF8GameData.gamedata import GameData
 
 
@@ -101,6 +99,7 @@ class Command:
                     param_value.append(self.__get_var_name(self.__op_code[op_index]))
                     param_list = [{"id": x['op_code'], "data": x['var_name']} for x in
                                   self.game_data.ai_data_json["list_var"]]
+                    self.param_possible_list.append(param_list)
                 elif type == "special_action":
                     if self.__op_code[op_index] < len(self.game_data.special_action_data_json["special_action"]):
                         param_value.append(self.game_data.special_action_data_json["special_action"][self.__op_code[op_index]]['name'])
@@ -153,7 +152,6 @@ class Command:
                         text = f"Low: {low_text} | Med: {med_text} | High: {high_text}"
                         possible_ability_values.append({'id': i, 'data': text})
                         if self.__op_code[op_index] == i:
-                            print(f"Adding param value text {text}")
                             param_value.append(text)
                     if self.__op_code[op_index] >= nb_abilities:
                         param_value.append("None")
@@ -202,8 +200,6 @@ class Command:
                     param_value.append(self.__op_code[op_index])
             for i in range(len(param_value)):
                 param_value[i] = '<span style="color:' + self.__color_param + ';">' + param_value[i] + '</span>'
-            print(op_info['text'])
-            print(param_value)
             self.__text = (op_info['text'] + " (size:{}bytes)").format(*param_value, op_info['size'] + 1)
         elif op_info["complexity"] == "complex":
             call_function = getattr(self, "_Command__op_" + "{:02}".format(op_info["op_code"]) + "_analysis")
@@ -211,7 +207,6 @@ class Command:
             self.__text = call_result[0].format(
                 *['<span style="color:' + self.__color_param + ';">' + str(x) + '</span>' for x in call_result[1]])
             self.__text += " (size:{}bytes)".format(op_info['size'] + 1)
-            print(self.__text)
 
     def __get_possible_target(self):
         return [x for x in self.__get_target_list()]
@@ -249,9 +244,6 @@ class Command:
         return [ret, []]
 
     def __op_38_analysis(self, op_code):
-        print("op !!!")
-        print(op_code[3])
-        print(self.game_data.status_data_json["status_ai"][op_code[3]])
         if op_code[3] < len(self.game_data.status_data_json["status_ai"]):
             status = self.game_data.status_data_json["status_ai"][op_code[3]]['name']
         else:
@@ -266,7 +258,6 @@ class Command:
             param_possible.append({'id': index, 'data': el['name']})
         self.param_possible_list.append(param_possible)
         ret = "TARGET {} WITH STATUS {}{}"
-        print([ret, [self.__get_target(op_code[1]), status, info]])
         return [ret, [self.__get_target(op_code[1]), status, info]]
 
     def __op_24_analysis(self, op_code):
@@ -515,11 +506,20 @@ class Command:
                     [left_subject_text, comparator, right_subject_text, subject_id, jump_value]]
 
     def __op_39_analysis(self, op_code):
-        if op_code[0] == 23:
-            ret = 'auto-boomerang'
+        # Apply status
+
+        if op_code[0] < len(self.game_data.status_data_json['status_ai']):
+            status = self.game_data.status_data_json['status_ai'][op_code[0]]['name']
         else:
-            ret = "unknown flag {}".format(op_code[0])
-        return ['MAKE {} of {} to {}', [ret, self.info_stat_data['monster_name'].get_str(), op_code[1]]]
+            status = "UNKNOWN STATUS"
+        if op_code[1] == 1:
+            activation_text = "ACTIVATE"
+        elif op_code[1] == 0:
+            activation_text = "DEACTIVATE"
+        else:
+            activation_text = "UNKNOWN ACTIVATION BYTE"
+        self.param_possible_list.append([])
+        return ['{} STATUS {} to {}', [activation_text, status, self.info_stat_data['monster_name']]]
 
     def __get_var_name(self, id):
         # There is specific var known, if not in the list it means it's a generic one
