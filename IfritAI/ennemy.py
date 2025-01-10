@@ -80,8 +80,7 @@ class Ennemy():
         except Exception as e:
             print(e)
 
-
-    def write_data_to_file(self, game_data:GameData, path):
+    def write_data_to_file(self, game_data: GameData, path):
         print("Writing monster {}".format(self.info_stat_data["monster_name"]))
         raw_data_to_write = bytearray()
 
@@ -206,9 +205,10 @@ class Ennemy():
         sect_position = [0]  # Adding to the list the header as a section 0
         for i in range(self.header_data['nb_section']):
             sect_position.append(
-                int.from_bytes(self.file_raw_data[game_data.AIData.SECTION_HEADER_SECTION_POSITION['offset'] + i * game_data.AIData.SECTION_HEADER_SECTION_POSITION['size']:
-                                                  game_data.AIData.SECTION_HEADER_SECTION_POSITION['offset'] +
-                                                  game_data.AIData.SECTION_HEADER_SECTION_POSITION['size'] * (i + 1)],
+                int.from_bytes(self.file_raw_data[
+                               game_data.AIData.SECTION_HEADER_SECTION_POSITION['offset'] + i * game_data.AIData.SECTION_HEADER_SECTION_POSITION['size']:
+                               game_data.AIData.SECTION_HEADER_SECTION_POSITION['offset'] +
+                               game_data.AIData.SECTION_HEADER_SECTION_POSITION['size'] * (i + 1)],
                                game_data.AIData.SECTION_HEADER_SECTION_POSITION['byteorder']))
         self.header_data['section_pos'] = sect_position
         file_size_section_offset = 4 + self.header_data['nb_section'] * 4
@@ -274,7 +274,7 @@ class Ennemy():
 
             self.info_stat_data[el['name']] = value
 
-    def __analyze_battle_script_section(self, game_data:GameData):
+    def __analyze_battle_script_section(self, game_data: GameData):
         SECTION_NUMBER = 8
         if len(self.header_data['section_pos']) <= SECTION_NUMBER:
             return
@@ -285,7 +285,8 @@ class Ennemy():
         self.battle_script_data['offset_ai_sub'] = self.__get_int_value_from_info(game_data.AIData.SECTION_BATTLE_SCRIPT_HEADER_OFFSET_AI_SUB, SECTION_NUMBER)
         self.battle_script_data['offset_text_offset'] = self.__get_int_value_from_info(game_data.AIData.SECTION_BATTLE_SCRIPT_HEADER_OFFSET_TEXT_OFFSET_SUB,
                                                                                        SECTION_NUMBER)
-        self.battle_script_data['offset_text_sub'] = self.__get_int_value_from_info(game_data.AIData.SECTION_BATTLE_SCRIPT_HEADER_OFFSET_TEXT_SUB, SECTION_NUMBER)
+        self.battle_script_data['offset_text_sub'] = self.__get_int_value_from_info(game_data.AIData.SECTION_BATTLE_SCRIPT_HEADER_OFFSET_TEXT_SUB,
+                                                                                    SECTION_NUMBER)
 
         # Reading text offset subsection
         nb_text = self.battle_script_data['offset_text_sub'] - self.battle_script_data['offset_text_offset']
@@ -293,7 +294,7 @@ class Ennemy():
             start_data = section_offset + self.battle_script_data['offset_text_offset'] + i
             end_data = start_data + game_data.AIData.SECTION_BATTLE_SCRIPT_TEXT_OFFSET['size']
             text_list_raw_data = self.file_raw_data[start_data:end_data]
-            #if i > 0 and text_list_raw_data == b'\x00\x00':  # Weird case where there is several pointer by the diff but several are 0 (which point to the same value)
+            # if i > 0 and text_list_raw_data == b'\x00\x00':  # Weird case where there is several pointer by the diff but several are 0 (which point to the same value)
             #    break
             self.battle_script_data['text_offset'].append(
                 int.from_bytes(text_list_raw_data, byteorder=game_data.AIData.SECTION_BATTLE_SCRIPT_HEADER_OFFSET_TEXT_OFFSET_SUB['byteorder']))
@@ -360,6 +361,12 @@ class Ennemy():
                     index_read += 1 + op_code_ref['size']
             self.battle_script_data['ai_data'].append(list_result)
         self.battle_script_data['ai_data'].append([])  # Adding a end section that is empty to mark the end of the all IA section
+
+    def insert_command(self, code_section_id: int, command: Command, index_insertion: int = 0):
+        self.battle_script_data['ai_data'][code_section_id].insert(index_insertion, command)
+
+    def remove_command(self, code_section_id: int, index_removal: int = 0):
+        del self.battle_script_data['ai_data'][code_section_id][index_removal]
 
     def __remove_stop_end(self, list_result):
         id_remove = 0

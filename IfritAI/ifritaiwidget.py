@@ -62,7 +62,6 @@ class IfritAIWidget(QWidget):
         self.button_color_picker.setFixedSize(35, 30)
         self.button_color_picker.clicked.connect(self.__select_color)
 
-
         self.expert_selector = QCheckBox()
         self.expert_selector.setChecked(False)
         self.expert_selector.setText("Expert mode")
@@ -77,7 +76,6 @@ class IfritAIWidget(QWidget):
 
         self.monster_name_label = QLabel()
         self.monster_name_label.hide()
-
 
         self.layout_top = QHBoxLayout()
         self.layout_top.addWidget(self.file_dialog_button)
@@ -134,7 +132,11 @@ class IfritAIWidget(QWidget):
         for index, command_widget in enumerate(self.command_line_widget):
             if command_widget.command.line_index >= command.line_index:
                 command_widget.command.line_index += 1
-        self.__add_line(Command(0, [], self.ifrit_manager.game_data, line_index=index_insert), True)
+        new_command = Command(0, [], self.ifrit_manager.game_data, info_stat_data=self.ifrit_manager.ennemy.info_stat_data,
+                                battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=index_insert)
+
+        self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, index_insert)
+        self.__add_line(new_command, True)
         self.__compute_if()
 
     def __add_line(self, command: Command, insert=False):
@@ -172,6 +174,7 @@ class IfritAIWidget(QWidget):
                 index_to_remove = index
             elif command_widget.command.line_index > command.line_index:
                 command_widget.command.line_index -= 1
+        self.ifrit_manager.ennemy.remove_command(self.script_section.currentIndex(), index_to_remove)
 
         self.add_button_widget[index_to_remove].setParent(None)
         self.add_button_widget[index_to_remove].deleteLater()
@@ -229,7 +232,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        #file_to_load = os.path.join("OriginalFiles", "c0m074.dat") # For developing faster
+        file_to_load = os.path.join("OriginalFiles", "c0m102.dat") # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]

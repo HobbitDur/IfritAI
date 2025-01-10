@@ -1,3 +1,5 @@
+import html
+
 from FF8GameData.gamedata import GameData
 
 
@@ -112,7 +114,9 @@ class Command:
                     nb_ability_med = len([x for x in self.info_stat_data['abilities_med'] if x['id'] !=0])
                     nb_ability_low = len([x for x in self.info_stat_data['abilities_low'] if x['id'] !=0])
                     nb_abilities = max(nb_ability_high, nb_ability_med, nb_ability_low)
+                    print(f"nb_abilitites: {nb_abilities}")
                     for i in range(nb_abilities):
+                        print(f"i: {i}")
                         if self.info_stat_data['abilities_high'][i] != 0:
                             if self.info_stat_data['abilities_high'][i]['type'] == 2:  # Magic
                                 high_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_high'][i]['id']]['name']
@@ -149,8 +153,9 @@ class Command:
                         text = f"Low: {low_text} | Med: {med_text} | High: {high_text}"
                         possible_ability_values.append({'id': i, 'data': text})
                         if self.__op_code[op_index] == i:
+                            print(f"Adding param value text {text}")
                             param_value.append(text)
-                    if self.__op_code[op_index] > nb_abilities:
+                    if self.__op_code[op_index] >= nb_abilities:
                         param_value.append("None")
                     possible_ability_values.append({'id': 253, 'data': "None"})# 253 for None value is often used by monsters.
                     self.param_possible_list.append(possible_ability_values)
@@ -197,6 +202,8 @@ class Command:
                     param_value.append(self.__op_code[op_index])
             for i in range(len(param_value)):
                 param_value[i] = '<span style="color:' + self.__color_param + ';">' + param_value[i] + '</span>'
+            print(op_info['text'])
+            print(param_value)
             self.__text = (op_info['text'] + " (size:{}bytes)").format(*param_value, op_info['size'] + 1)
         elif op_info["complexity"] == "complex":
             call_function = getattr(self, "_Command__op_" + "{:02}".format(op_info["op_code"]) + "_analysis")
@@ -204,6 +211,7 @@ class Command:
             self.__text = call_result[0].format(
                 *['<span style="color:' + self.__color_param + ';">' + str(x) + '</span>' for x in call_result[1]])
             self.__text += " (size:{}bytes)".format(op_info['size'] + 1)
+            print(self.__text)
 
     def __get_possible_target(self):
         return [x for x in self.__get_target_list()]
@@ -241,6 +249,9 @@ class Command:
         return [ret, []]
 
     def __op_38_analysis(self, op_code):
+        print("op !!!")
+        print(op_code[3])
+        print(self.game_data.status_data_json["status_ai"][op_code[3]])
         if op_code[3] < len(self.game_data.status_data_json["status_ai"]):
             status = self.game_data.status_data_json["status_ai"][op_code[3]]['name']
         else:
@@ -255,6 +266,7 @@ class Command:
             param_possible.append({'id': index, 'data': el['name']})
         self.param_possible_list.append(param_possible)
         ret = "TARGET {} WITH STATUS {}{}"
+        print([ret, [self.__get_target(op_code[1]), status, info]])
         return [ret, [self.__get_target(op_code[1]), status, info]]
 
     def __op_24_analysis(self, op_code):
