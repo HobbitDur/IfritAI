@@ -155,8 +155,10 @@ class IfritAIWidget(QWidget):
 
     def __change_hex(self):
         hex_chosen = self.hex_selector.isChecked()
+        self.code_widget.change_hex(hex_chosen)
         for line in self.command_line_widget:
             line.change_print_hex(hex_chosen)
+        #self.__change_expert()
 
     def __select_color(self):
         color = QColorDialog.getColor()

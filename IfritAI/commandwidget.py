@@ -20,7 +20,6 @@ class CommandWidget(QWidget):
 
     def __init__(self, command: Command, expert_chosen=False, print_hex = False):
         QWidget.__init__(self)
-        print("Test validate !")
         # Parameters
         self._command = command
         self._expert_chosen = expert_chosen
@@ -91,6 +90,10 @@ class CommandWidget(QWidget):
         self._expert_chosen = expert_chosen
         self.__reset_op_id_widget()
         self.__reset_op_code_widget()
+        self.__hide_show_expert()
+
+
+    def __hide_show_expert(self):
         if self._expert_chosen == 2:
             for i in range(len(self.widget_op_code)):
                 self.widget_op_code[i].hide()
@@ -99,7 +102,9 @@ class CommandWidget(QWidget):
                     retain_policy.setRetainSizeWhenHidden(False)
                     self.widget_op_code[i].setSizePolicy(retain_policy)
             self.op_id_widget.hide()
-
+            self.frame_text.hide()
+        else:
+            self.frame_text.show()
 
 
 
@@ -107,6 +112,7 @@ class CommandWidget(QWidget):
         self._print_hex = print_hex
         self.__reset_op_id_widget()
         self.__reset_op_code_widget()
+        self.__hide_show_expert()
 
     def __op_id_change(self):
         if self._expert_chosen:

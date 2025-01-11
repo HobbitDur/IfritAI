@@ -550,6 +550,7 @@ class Command:
         for var_data in self.game_data.ai_data_json['list_var']:
             if var_data['op_code'] == 220 + number_of_generic_var_read:
                 list_target.append({"id": number_of_generic_var_read + 220, "data": "TARGET TYPE IN: " + var_data['var_name']})
+                number_of_generic_var_read+=1
 
         if advanced:
             list_target_data = self.game_data.ai_data_json['target_special_advanced']
