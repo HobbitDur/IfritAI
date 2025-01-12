@@ -45,7 +45,7 @@ class CodeWidget(QWidget):
             for i in range(len(op_code_text)):
                 op_code_int = int(op_code_text[i], 0)
                 if i > 0:
-                    op_code_new_text += " ,"
+                    op_code_new_text += ", "
                 if self._hex_chosen:
                     op_code_text_unit = "0x{:02X}".format(op_code_int)
                 else:
@@ -68,7 +68,7 @@ class CodeWidget(QWidget):
                 func_name+="("
             for i, op_code in enumerate(op_code_list):
                 if i > 0:
-                    func_name += " ,"
+                    func_name += ", "
                 if self._hex_chosen:
                     func_name += "0x{:02X}".format(op_code)
                 else:

@@ -1,6 +1,7 @@
 import os
 import pathlib
 from typing import List
+from venv import create
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QFont
@@ -71,7 +72,6 @@ class IfritAIWidget(QWidget):
         self.expert_selector.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.expert_selector.toggled.connect(self.__change_expert)
 
-
         self.expert_selector_title = QLabel("Expert mode: ")
         self.expert_selector = QComboBox()
         self.expert_selector.addItems(self.EXPERT_SELECTOR_ITEMS)
@@ -90,7 +90,6 @@ class IfritAIWidget(QWidget):
         self.monster_name_label = QLabel()
         self.monster_name_label.hide()
 
-
         self.layout_top = QHBoxLayout()
         self.layout_top.addWidget(self.file_dialog_button)
         self.layout_top.addWidget(self.save_button)
@@ -107,7 +106,6 @@ class IfritAIWidget(QWidget):
 
         self.main_horizontal_layout = QHBoxLayout()
         self.main_horizontal_layout.addWidget(self.code_widget)
-
 
         # The main horizontal will be for code expert, when ai layout will be for others
 
@@ -126,12 +124,12 @@ class IfritAIWidget(QWidget):
 
         self.show()
 
-    def code_expert_changed_hook(self, command_list:List[Command]):
+    def code_expert_changed_hook(self, command_list: List[Command]):
         command_list_from_widget = [command_widget.get_command() for command_widget in self.command_line_widget]
         for command in command_list_from_widget:
-            self.__remove_line(command)
+            self.__remove_line(command, delete_data=True)
         for command in command_list:
-            self.__insert_line(current_line_command=None, new_command=command)
+            self.__append_line(new_command=command, create_data=True)
         self.__hide_show_expert()
 
     def __hide_show_expert(self):
@@ -152,7 +150,7 @@ class IfritAIWidget(QWidget):
     def __change_expert(self):
         expert_chosen = self.expert_selector.currentIndex()
         for line in self.command_line_widget:
-                line.change_expert(expert_chosen)
+            line.change_expert(expert_chosen)
         self.__hide_show_expert()
         self._set_text_expert()
 
@@ -171,32 +169,44 @@ class IfritAIWidget(QWidget):
         if color.isValid():
             self.ifrit_manager.game_data.color = color.name()
             for command_widget in self.command_line_widget:
-                command_widget._command.set_color(color.name())
+                command_widget.get_command().set_color(color.name())
                 command_widget.set_text()
 
     def __save_file(self):
         self.ifrit_manager.save_file(self.file_loaded)
 
     def __section_change(self):
-        self.__clear__lines()
+        self.__clear_lines(delete_data=False)
         self.__setup_section_data()
 
-    def __insert_line(self, current_line_command: Command=None, new_command:Command=None):
+    def __append_line(self, new_command: Command = None, create_data=True):
+        if not new_command:
+            new_command = Command(0, [], self.ifrit_manager.game_data, info_stat_data=self.ifrit_manager.ennemy.info_stat_data,
+                                  battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=len(self.command_line_widget))
+
+        if create_data:
+            self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, len(self.command_line_widget))
+
+        self.__add_line(new_command)
+        self.__compute_if()
+
+    def __insert_line(self, current_line_command: Command = None, new_command: Command = None, create_data=True):
         # As we are inserting, moving all lines by 1
         if current_line_command:
             index_insert = current_line_command.line_index
             for index, command_widget in enumerate(self.command_line_widget):
-                if command_widget._command.line_index >= current_line_command.line_index:
-                    command_widget._command.line_index += 1
+                if command_widget.get_command().line_index >= current_line_command.line_index:
+                    command_widget.get_command().line_index += 1
         else:
             index_insert = 0
 
-
         if not new_command:
             new_command = Command(0, [], self.ifrit_manager.game_data, info_stat_data=self.ifrit_manager.ennemy.info_stat_data,
-                                    battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=index_insert)
+                                  battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=index_insert)
 
-        self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, index_insert)
+        if create_data:
+            self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, index_insert)
+
         self.__add_line(new_command)
         self.__compute_if()
 
@@ -205,11 +215,11 @@ class IfritAIWidget(QWidget):
         add_button = QPushButton()
         add_button.setText("+")
         add_button.setFixedSize(30, 30)
-        add_button.clicked.connect(lambda: self.__insert_line(command))
+        add_button.clicked.connect(lambda: self.__insert_line(command, create_data=True))
         remove_button = QPushButton()
         remove_button.setText("-")
         remove_button.setFixedSize(30, 30)
-        remove_button.clicked.connect(lambda: self.__remove_line(command))
+        remove_button.clicked.connect(lambda: self.__remove_line(command, delete_data=True))
 
         # Creating new element to list
         self.add_button_widget.insert(command.line_index, add_button)
@@ -219,7 +229,6 @@ class IfritAIWidget(QWidget):
         self.command_line_widget.insert(command.line_index, command_widget)
         self.ai_line_layout.insert(command.line_index, QHBoxLayout())
 
-
         # Adding widget to layout
         self.ai_line_layout[command.line_index].addWidget(self.add_button_widget[command.line_index])
         self.ai_line_layout[command.line_index].addWidget(self.remove_button_widget[command.line_index])
@@ -228,16 +237,17 @@ class IfritAIWidget(QWidget):
         # Adding to the "main" layout
         self.ai_layout.insertLayout(command.line_index, self.ai_line_layout[command.line_index])
 
-    def __remove_line(self, command):
+    def __remove_line(self, command, delete_data=True):
         # Removing the widget
         index_to_remove = -1
         # Updating the line index of all command widget
         for index, command_widget in enumerate(self.command_line_widget):
-            if command_widget._command.line_index == command.line_index:
+            if command_widget.get_command().line_index == command.line_index:
                 index_to_remove = index
-            elif command_widget._command.line_index > command.line_index:
-                command_widget._command.line_index -= 1
-        self.ifrit_manager.ennemy.remove_command(self.script_section.currentIndex(), index_to_remove)
+            elif command_widget.get_command().line_index > command.line_index:
+                command_widget.get_command().line_index -= 1
+        if delete_data:
+            self.ifrit_manager.ennemy.remove_command(self.script_section.currentIndex(), index_to_remove)
 
         self.add_button_widget[index_to_remove].setParent(None)
         self.add_button_widget[index_to_remove].deleteLater()
@@ -299,7 +309,7 @@ class IfritAIWidget(QWidget):
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
         if file_to_load:
-            self.__clear__lines()
+            self.__clear_lines()
             self.ifrit_manager.init_from_file(file_to_load)
             self.monster_name_label.setText(
                 "Monster : {}, file: {}".format(self.ifrit_manager.ennemy.info_stat_data['monster_name'].get_str(),
@@ -311,21 +321,10 @@ class IfritAIWidget(QWidget):
     def __reload_file(self):
         self.__load_file(self.file_loaded)
 
-    def __clear__lines(self):
-        for i in range(len(self.add_button_widget)):
-            self.add_button_widget[i].setParent(None)
-            self.add_button_widget[i].deleteLater()
-            self.remove_button_widget[i].setParent(None)
-            self.remove_button_widget[i].deleteLater()
-            self.command_line_widget[i].setParent(None)
-            self.command_line_widget[i].deleteLater()
-            self.ai_layout.takeAt(i)
-
-        # Deleting element from list
-        self.add_button_widget = []
-        self.remove_button_widget = []
-        self.command_line_widget = []
-        self.ai_line_layout = []
+    def __clear_lines(self, delete_data=False):
+        command_list = [x.get_command() for x in self.command_line_widget]
+        for command in command_list:
+            self.__remove_line(command, delete_data)
 
     def __setup_section_data(self):
         line_index = 0
@@ -334,7 +333,7 @@ class IfritAIWidget(QWidget):
             for command in self.ifrit_manager.ai_data[index_section]:
                 command.line_index = line_index
                 command.set_color(self.ifrit_manager.game_data.AIData.COLOR)
-                self.__add_line(command)
+                self.__append_line(command, create_data=False)
                 line_index += 1
         self._set_text_expert()
         self.__hide_show_expert()
