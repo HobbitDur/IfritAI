@@ -268,15 +268,14 @@ class IfritAIWidget(QWidget):
                     widget.deleteLater()
 
     def __compute_if(self):
-        array_sorted = self.command_line_widget
-        array_sorted = self.qsort_command_widget(array_sorted)
+        array_sorted = self.qsort_command_widget(self.command_line_widget)
         if_index = 0
         for command_widget in array_sorted:
-            if command_widget._command.get_id() == 35:
-                if command_widget._command.get_op_code()[0] == 0 or command_widget._command.get_op_code()[0] == 3:
+            if command_widget.get_command().get_id() == 35:
+                if command_widget.get_command().get_op_code()[0] == 0 or command_widget.get_command().get_op_code()[0] == 3:
                     if_index -= 1
             command_widget.set_if_index(if_index)
-            if command_widget._command.get_id() == 2:
+            if command_widget.get_command().get_id() == 2:
                 if_index += 1
 
     def __reset_if(self):
@@ -289,9 +288,9 @@ class IfritAIWidget(QWidget):
         else:
             pivot = inlist[0]
             lesser = self.qsort_command_widget(
-                [x for x in inlist[1:] if x._command.line_index < pivot._command.line_index])
+                [x for x in inlist[1:] if x.get_command().line_index < pivot.get_command().line_index])
             greater = self.qsort_command_widget(
-                [x for x in inlist[1:] if x._command.line_index >= pivot._command.line_index])
+                [x for x in inlist[1:] if x.get_command().line_index >= pivot.get_command().line_index])
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):

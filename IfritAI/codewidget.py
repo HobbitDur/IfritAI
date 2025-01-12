@@ -9,6 +9,7 @@ from IfritAI.ennemy import Ennemy
 
 
 class CodeWidget(QWidget):
+    IF_INDENT_SIZE=3
 
     def __init__(self, game_data: GameData, ennemy_data: Ennemy, command_list: List[Command] = (), code_changed_hook=None, hex_chosen:bool=False):
         QWidget.__init__(self)
@@ -37,14 +38,7 @@ class CodeWidget(QWidget):
         self._hex_chosen = hex_chosen
         new_code_text = ""
         for line in self.code_area_widget.toPlainText().splitlines():
-            line = line.replace(" ", "")
-            split_data_name = line.split("(")
-            command_id_text = split_data_name[0]
-            if len(split_data_name) == 2:
-                split_data_name[1] = split_data_name[1].replace(")", "")
-                op_code_text = split_data_name[1].split(",")
-            else:
-                op_code_text=[]
+            command_id_text, op_code_text = self._get_data_from_line(line)
             op_code_new_text = ""
             if op_code_text:
                 op_code_new_text+="("
@@ -87,19 +81,13 @@ class CodeWidget(QWidget):
             code_text += func_name
             code_text+= '\n'
         self.code_area_widget.setText(code_text)
+        self.__compute_if()
 
     def _compute_text_to_command(self):
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
         for index, line in enumerate(command_text_list):
-            line = line.replace(" ", "")
-            split_data_name = line.split("(")
-            command_id_text = split_data_name[0]
-            if len(split_data_name) == 2:
-                split_data_name[1] = split_data_name[1].replace(")", "")
-                op_code_text = split_data_name[1].split(",")
-            else:
-                op_code_text=[]
+            command_id_text, op_code_text = self._get_data_from_line(line)
             op_code_int = []
             for i in range(len(op_code_text)):
                 if self._hex_chosen:
@@ -116,6 +104,43 @@ class CodeWidget(QWidget):
                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index)
             self._command_list.append(new_command)
         self.code_changed_hook(self._command_list)
+        self.__compute_if()
 
 
+    @staticmethod
+    def _get_data_from_line(line):
+        line = line.replace(" ", "")
+        split_data_name = line.split("(")
+        command_id_text = split_data_name[0]
+        if len(split_data_name) == 2:
+            split_data_name[1] = split_data_name[1].replace(")", "")
+            op_code_text = split_data_name[1].split(",")
+        else:
+            op_code_text = []
+
+        return command_id_text, op_code_text
+
+    def __compute_if(self):
+        command_text_list  = self.code_area_widget.toPlainText().splitlines()
+        if_index = 0
+        new_text = ""
+        for line in command_text_list:
+            func_name, op_code_text = self._get_data_from_line(line)
+            command_id = [x['op_code'] for x in self.game_data.ai_data_json['op_code_info'] if x['func_name']==func_name]
+            if command_id:
+                command_id = command_id[0]
+            else:
+                print(f"Unknown func when computing if: {func_name}")
+                command_id=0
+            if command_id == 35:
+                if int(op_code_text[0], 0) == 0 or int(op_code_text[0], 0) == 3:
+                    if_index -= 1
+            for i in range(if_index*self.IF_INDENT_SIZE):
+                new_text+=" "
+            if command_id == 2:
+                if_index += 1
+            new_text+=line + '\n'
+
+
+        self.code_area_widget.setText(new_text)
 
