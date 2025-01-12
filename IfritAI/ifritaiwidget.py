@@ -102,7 +102,7 @@ class IfritAIWidget(QWidget):
         self.layout_top.addWidget(self.monster_name_label)
         self.layout_top.addStretch(1)
 
-        self.code_widget = CodeWidget(self.ifrit_manager.game_data, ennemy_data=self.ifrit_manager.ennemy, code_changed_hook=self.code_expert_changed)
+        self.code_widget = CodeWidget(self.ifrit_manager.game_data, ennemy_data=self.ifrit_manager.ennemy, code_changed_hook=self.code_expert_changed_hook)
         self.code_widget.hide()
 
         self.main_horizontal_layout = QHBoxLayout()
@@ -126,18 +126,17 @@ class IfritAIWidget(QWidget):
 
         self.show()
 
-    def code_expert_changed(self, command_list:List[Command]):
+    def code_expert_changed_hook(self, command_list:List[Command]):
         command_list_from_widget = [command_widget.get_command() for command_widget in self.command_line_widget]
         for command in command_list_from_widget:
             self.__remove_line(command)
         for command in command_list:
             self.__insert_line(current_line_command=None, new_command=command)
+        self.__hide_show_expert()
 
-    def __change_expert(self):
+    def __hide_show_expert(self):
         expert_chosen = self.expert_selector.currentIndex()
-        for line in self.command_line_widget:
-                line.change_expert(expert_chosen)
-        if expert_chosen == 2: # Expert mode
+        if expert_chosen == 2:  # Expert mode
             self.code_widget.show()
             for i in range(len(self.add_button_widget)):
                 self.add_button_widget[i].hide()
@@ -149,16 +148,23 @@ class IfritAIWidget(QWidget):
                 self.add_button_widget[i].show()
             for i in range(len(self.remove_button_widget)):
                 self.remove_button_widget[i].show()
-        command_list = [command_widget._command for command_widget in self.command_line_widget]
-        self.code_widget.set_text_from_command(command_list)
 
+    def __change_expert(self):
+        expert_chosen = self.expert_selector.currentIndex()
+        for line in self.command_line_widget:
+                line.change_expert(expert_chosen)
+        self.__hide_show_expert()
+        self._set_text_expert()
+
+    def _set_text_expert(self):
+        command_list = [command_widget.get_command() for command_widget in self.command_line_widget]
+        self.code_widget.set_text_from_command(command_list)
 
     def __change_hex(self):
         hex_chosen = self.hex_selector.isChecked()
         self.code_widget.change_hex(hex_chosen)
         for line in self.command_line_widget:
             line.change_print_hex(hex_chosen)
-        #self.__change_expert()
 
     def __select_color(self):
         color = QColorDialog.getColor()
@@ -221,8 +227,6 @@ class IfritAIWidget(QWidget):
 
         # Adding to the "main" layout
         self.ai_layout.insertLayout(command.line_index, self.ai_line_layout[command.line_index])
-
-        self.__change_expert()
 
     def __remove_line(self, command):
         # Removing the widget
@@ -291,7 +295,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        # file_to_load = os.path.join("OriginalFiles", "c0m083.dat") # For developing faster
+        file_to_load = os.path.join("OriginalFiles", "c0m046.dat") # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
@@ -333,6 +337,8 @@ class IfritAIWidget(QWidget):
                 command.set_color(self.ifrit_manager.game_data.AIData.COLOR)
                 self.__add_line(command)
                 line_index += 1
+        self._set_text_expert()
+        self.__hide_show_expert()
         self.__compute_if()
 
     def __set_title(self):

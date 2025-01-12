@@ -21,32 +21,44 @@ class CodeWidget(QWidget):
 
         self.main_layout = QVBoxLayout()
         self.setLayout(self.main_layout)
-
-        self.main_layout.addWidget(self.code_area_widget)
-        self._command_list = command_list
-        self.set_text_from_command(self._command_list)
-
         self.compute_button = QPushButton()
         self.compute_button.setText("Compute")
         self.compute_button.clicked.connect(self._compute_text_to_command)
 
         self.main_layout.addWidget(self.compute_button)
+        self.main_layout.addWidget(self.code_area_widget)
+
+        self._command_list = command_list
+        self.set_text_from_command(self._command_list)
+
+
 
     def change_hex(self, hex_chosen):
         self._hex_chosen = hex_chosen
         new_code_text = ""
         for line in self.code_area_widget.toPlainText().splitlines():
-            split_data = line.split(" ")
-            command_id_text = split_data[0]
-            op_code_text = split_data[1:]
+            line = line.replace(" ", "")
+            split_data_name = line.split("(")
+            command_id_text = split_data_name[0]
+            if len(split_data_name) == 2:
+                split_data_name[1] = split_data_name[1].replace(")", "")
+                op_code_text = split_data_name[1].split(",")
+            else:
+                op_code_text=[]
             op_code_new_text = ""
+            if op_code_text:
+                op_code_new_text+="("
             for i in range(len(op_code_text)):
                 op_code_int = int(op_code_text[i], 0)
+                if i > 0:
+                    op_code_new_text += " ,"
                 if self._hex_chosen:
                     op_code_text_unit = "0x{:02X}".format(op_code_int)
                 else:
                     op_code_text_unit = str(op_code_int)
-                op_code_new_text+= " " + op_code_text_unit
+                op_code_new_text+= op_code_text_unit
+            if op_code_text:
+                op_code_new_text+=")"
             new_code_text += command_id_text + op_code_new_text + "\n"
         self.code_area_widget.setText(new_code_text)
 
@@ -57,11 +69,18 @@ class CodeWidget(QWidget):
             func_name = [command_data['func_name'] for command_data in self.game_data.ai_data_json['op_code_info'] if command_data['op_code'] == command.get_id()][0]
             if func_name == "":
                 func_name="unknown_func_name"
-            for op_code in command.get_op_code():
+            op_code_list = command.get_op_code()
+            if op_code_list:
+                func_name+="("
+            for i, op_code in enumerate(op_code_list):
+                if i > 0:
+                    func_name += " ,"
                 if self._hex_chosen:
-                    func_name += " " + "0x{:02X}".format(op_code)
+                    func_name += "0x{:02X}".format(op_code)
                 else:
-                    func_name += " " + str(op_code)
+                    func_name += str(op_code)
+            if op_code_list:
+                func_name+=")"
             func_list.append(func_name)
         code_text = ""
         for func_name in func_list:
@@ -72,10 +91,15 @@ class CodeWidget(QWidget):
     def _compute_text_to_command(self):
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
-        for index, command_text in enumerate(command_text_list):
-            split_data = command_text.split(" ")
-            command_id_text = split_data[0]
-            op_code_text = split_data[1:]
+        for index, line in enumerate(command_text_list):
+            line = line.replace(" ", "")
+            split_data_name = line.split("(")
+            command_id_text = split_data_name[0]
+            if len(split_data_name) == 2:
+                split_data_name[1] = split_data_name[1].replace(")", "")
+                op_code_text = split_data_name[1].split(",")
+            else:
+                op_code_text=[]
             op_code_int = []
             for i in range(len(op_code_text)):
                 if self._hex_chosen:

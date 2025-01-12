@@ -553,7 +553,7 @@ class Command:
                 number_of_generic_var_read+=1
 
         if advanced:
-            list_target_data = self.game_data.ai_data_json['target_special_advanced']
+            list_target_data = self.game_data.ai_data_json['target_special_reversed']
         else:
             list_target_data = self.game_data.ai_data_json['target_special_basic']
 

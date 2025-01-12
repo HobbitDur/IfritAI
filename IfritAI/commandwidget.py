@@ -18,7 +18,7 @@ class CommandWidget(QWidget):
     MAX_OP_CODE_VALUE = 255
     MIN_OP_CODE_VALUE = 0
 
-    def __init__(self, command: Command, expert_chosen=False, print_hex = False):
+    def __init__(self, command: Command, expert_chosen=0, print_hex = False):
         QWidget.__init__(self)
         # Parameters
         self._command = command
@@ -70,6 +70,8 @@ class CommandWidget(QWidget):
         self.main_layout.addWidget(self.frame_text)
         self.main_layout.addLayout(self.layout_text)
         self.main_layout.addLayout(self.layout_stretch)
+
+        self.__hide_show_expert()
 
     def get_command(self):
         return self._command
