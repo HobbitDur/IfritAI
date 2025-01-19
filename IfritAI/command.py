@@ -106,9 +106,9 @@ class Command:
                         param_value.append("UNKNOWN SPECIAL_ACTION")
                 elif type == "monster_line_ability":
                     possible_ability_values = []
-                    nb_ability_high = len([x for x in self.info_stat_data['abilities_high'] if x['id'] !=0])
-                    nb_ability_med = len([x for x in self.info_stat_data['abilities_med'] if x['id'] !=0])
-                    nb_ability_low = len([x for x in self.info_stat_data['abilities_low'] if x['id'] !=0])
+                    nb_ability_high = len([x for x in self.info_stat_data['abilities_high'] if x['id'] != 0])
+                    nb_ability_med = len([x for x in self.info_stat_data['abilities_med'] if x['id'] != 0])
+                    nb_ability_low = len([x for x in self.info_stat_data['abilities_low'] if x['id'] != 0])
                     nb_abilities = max(nb_ability_high, nb_ability_med, nb_ability_low)
                     for i in range(nb_abilities):
                         if self.info_stat_data['abilities_high'][i] != 0:
@@ -150,7 +150,7 @@ class Command:
                             param_value.append(text)
                     if self.__op_code[op_index] >= nb_abilities:
                         param_value.append("None")
-                    possible_ability_values.append({'id': 253, 'data': "None"})# 253 for None value is often used by monsters.
+                    possible_ability_values.append({'id': 253, 'data': "None"})  # 253 for None value is often used by monsters.
                     self.param_possible_list.append(possible_ability_values)
                 elif type == "ability":
                     if self.__op_code[op_index] < len(self.game_data.enemy_abilities_data_json["abilities"]):
@@ -182,9 +182,12 @@ class Command:
                         self.param_possible_list.append(self.__get_possible_gforce())
                     else:
                         param_value.append("UNKNOWN GFORCE")
-                elif type == "target_advanced":
-                    param_value.append(self.__get_target(self.__op_code[op_index], advanced=True))
-                    self.param_possible_list.append([x for x in self.__get_target_list(advanced=True)])
+                elif type == "target_advanced_specific":
+                    param_value.append(self.__get_target(self.__op_code[op_index], advanced=True, specific=True))
+                    self.param_possible_list.append([x for x in self.__get_target_list(advanced=True, specific=True)])
+                elif type == "target_advanced_generic":
+                    param_value.append(self.__get_target(self.__op_code[op_index], advanced=True, specific=False))
+                    self.param_possible_list.append([x for x in self.__get_target_list(advanced=True, specific=False)])
                 elif type == "target_basic":
                     param_value.append(self.__get_target(self.__op_code[op_index], advanced=False))
                     self.param_possible_list.append([x for x in self.__get_target_list(advanced=False)])
@@ -201,8 +204,11 @@ class Command:
                 *['<span style="color:' + self.__color_param + ';">' + str(x) + '</span>' for x in call_result[1]])
             self.__text += " (size:{}bytes)".format(op_info['size'] + 1)
 
-    def __get_possible_target_advanced(self):
-        return [x for x in self.__get_target_list(advanced=True)]
+    def __get_possible_target_advanced_specific(self):
+        return [x for x in self.__get_target_list(advanced=True, specific=True)]
+
+    def __get_possible_target_advanced_generic(self):
+        return [x for x in self.__get_target_list(advanced=True, specific=False)]
 
     def __get_possible_var(self):
         return [{"id": x['op_code'], "data": x['var_name']} for x in self.game_data.ai_data_json["list_var"]]
@@ -224,6 +230,7 @@ class Command:
 
     def __get_possible_card(self):
         return [{'id': val_dict['id'], 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.card_data_json["card_info"])]
+
     def __get_possible_status_ai(self):
         return [{'id': val_dict['id'], 'data': val_dict['name']} for id, val_dict in enumerate(self.game_data.status_data_json["status_ai"])]
 
@@ -331,7 +338,8 @@ class Command:
         jump_value_op_2 = op_code[6]
         jump_value = int.from_bytes(bytearray([op_code[5], op_code[6]]), byteorder='little')
         target = self.__get_target(op_code_left_condition_param, advanced=True)
-        target_reverse = self.__get_target(op_code_left_condition_param, advanced=True)
+        target_advanced_generic = self.__get_target(op_code_left_condition_param, advanced=True, specific=False)
+        target_advanced_specific = self.__get_target(op_code_left_condition_param, advanced=True, specific=True)
         if op_code_comparator < len(self.game_data.ai_data_json['list_comparator_html']):
             comparator = self.game_data.ai_data_json['list_comparator_html'][op_code_comparator]
         else:
@@ -349,8 +357,11 @@ class Command:
                 if if_subject_left_data['param_left_type'] == "target_basic":
                     param_left = target
                     list_param_possible_left.extend(self.__get_target_list(advanced=False))
-                elif if_subject_left_data['param_left_type'] == "target_advanced":
-                    param_left = target_reverse
+                elif if_subject_left_data['param_left_type'] == "target_advanced_generic":
+                    param_left = target_advanced_generic
+                    list_param_possible_left.extend(self.__get_target_list(advanced=True))
+                elif if_subject_left_data['param_left_type'] == "target_advanced_specific":
+                    param_left = target_advanced_specific
                     list_param_possible_left.extend(self.__get_target_list(advanced=True))
                 elif if_subject_left_data['param_left_type'] == "int":
                     param_left = op_code_left_condition_param
@@ -360,8 +371,17 @@ class Command:
                     print("Unexpected param_left_type: {}".format(if_subject_left_data['param_left_type']))
                     param_left = op_code_left_condition_param
                     list_param_possible_left.append({"id:": op_code_left_condition_param, "data": "Unused"})
+            elif if_subject_left_data["complexity"] == "complex":
+                if if_subject_left_data["subject_id"] == 2:  # RANDOM VALUE
+                    param_left = op_code_left_condition_param - 1  # The random value is between 0 and the param - 1
+                else:
+                    print(f"Unexpected subject_id: {if_subject_left_data["subject_id"]}")
+                    param_left = op_code_left_condition_param
+            else:
+                print(f"Unexpected complexity: {if_subject_left_data["complexity"]}")
+                param_left = op_code_left_condition_param
 
-                left_subject = {'text': if_subject_left_data["left_text"], 'param': param_left}
+            left_subject = {'text': if_subject_left_data["left_text"], 'param': param_left}
         elif subject_id > 19:
             left_subject = {'text': '{}', 'param': self.__get_var_name(subject_id)}
             right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
@@ -393,7 +413,8 @@ class Command:
             attack_left_text = "{}"
             attack_left_condition_param = str(op_code[1])
             sum_text = ""
-            list_param_possible_left.extend([{'id': x['param_id'], 'data': [sum_text+y for y in x['text']][-1]}for x in self.game_data.ai_data_json['subject_left_10']])
+            list_param_possible_left.extend(
+                [{'id': x['param_id'], 'data': [sum_text + y for y in x['text']][-1]} for x in self.game_data.ai_data_json['subject_left_10']])
             attack_right_text = "{}"
             attack_right_condition_param = [str(op_code[3])]
             subject_left_data = [x['text'] for x in self.game_data.ai_data_json['subject_left_10'] if x['param_id'] == op_code[1]]
@@ -533,7 +554,7 @@ class Command:
             var_info_specific = "var" + str(id)
         return var_info_specific
 
-    def __get_target_list(self, advanced=False):
+    def __get_target_list(self, advanced=False, specific=False):
         list_target = []
         # The target list has 4 different type of target:
         # 1. The characters
@@ -550,12 +571,15 @@ class Command:
         for var_data in self.game_data.ai_data_json['list_var']:
             if var_data['op_code'] == 220 + number_of_generic_var_read:
                 list_target.append({"id": number_of_generic_var_read + 220, "data": "TARGET TYPE IN: " + var_data['var_name']})
-                number_of_generic_var_read+=1
+                number_of_generic_var_read += 1
 
         if advanced:
-            list_target_data = self.game_data.ai_data_json['target_special_reversed']
+            if specific:
+                list_target_data = self.game_data.ai_data_json['target_advanced_specific']
+            else:
+                list_target_data = self.game_data.ai_data_json['target_advanced_generic']
         else:
-            list_target_data = self.game_data.ai_data_json['target_special_basic']
+            list_target_data = self.game_data.ai_data_json['target_basic']
 
         for el in list_target_data:
             if el['param_type'] == "monster_name":
@@ -572,8 +596,8 @@ class Command:
             list_target.append({"id": el['param_id'], "data": text})
         return list_target
 
-    def __get_target(self, id, advanced=False):
-        target = [x['data'] for x in self.__get_target_list(advanced) if x['id'] == id]
+    def __get_target(self, id, advanced=False, specific=False):
+        target = [x['data'] for x in self.__get_target_list(advanced, specific) if x['id'] == id]
         if target:
             return target[0]
         else:
