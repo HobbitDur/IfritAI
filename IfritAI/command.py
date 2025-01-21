@@ -668,6 +668,7 @@ class Command:
         return [ret, param_return]
 
     def __op_02_analysis(self, op_code):
+        print("__op_02_analysis")
         # op_02 = ['subject_id', 'left condition (target)', 'comparator', 'right condition (value)', 'jump1', 'jump2', 'debug']
         subject_id = op_code[0]
         op_code_left_condition_param = op_code[1]
@@ -698,10 +699,10 @@ class Command:
                     list_param_possible_left.extend(self.__get_target_list(advanced=False))
                 elif if_subject_left_data['param_left_type'] == "target_advanced_generic":
                     param_left = target_advanced_generic
-                    list_param_possible_left.extend(self.__get_target_list(advanced=True))
+                    list_param_possible_left.extend(self.__get_target_list(advanced=True, specific=False))
                 elif if_subject_left_data['param_left_type'] == "target_advanced_specific":
                     param_left = target_advanced_specific
-                    list_param_possible_left.extend(self.__get_target_list(advanced=True))
+                    list_param_possible_left.extend(self.__get_target_list(advanced=True, specific=True))
                 elif if_subject_left_data['param_left_type'] == "int":
                     param_left = op_code_left_condition_param
                 elif if_subject_left_data['param_left_type'] == "":
@@ -739,6 +740,7 @@ class Command:
                 right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
             elif right_param_type == 'status_ai':
                 param = [x['name'] for x in self.game_data.status_data_json["status_ai"] if x['id'] == op_code_right_condition_param]
+                print(param)
                 right_subject = {'text': '{}', 'param': [param[0]]}
                 list_param_possible_right = self.__get_possible_status_ai()
             elif right_param_type == 'target_advanced_specific':
@@ -751,6 +753,7 @@ class Command:
                 right_subject = {'text': '{}', 'param': [self.__get_target(op_code[3], advanced=True, specific=False)]}
                 list_param_possible_right = self.__get_possible_target_advanced_specific()
             elif right_param_type == 'complex' and subject_id == 10:
+                print("TATAYOYO")
                 attack_left_text = "{}"
                 attack_left_condition_param = str(op_code[1])
                 sum_text = ""
@@ -820,9 +823,14 @@ class Command:
 
                 left_subject = {'text': attack_left_text, 'param': attack_left_condition_param}
                 right_subject = {'text': attack_right_text, 'param': attack_right_condition_param}
+            else:
+                print(f"Unexpected right_param_type: {right_param_type}")
+                right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
         else:
             print(f"Unexpected subject id: {subject_id}")
             right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
+
+        print("MAMAZKFGK")
 
         left_subject_text = left_subject['text'].format(left_subject['param'])
         right_subject_text = right_subject['text'].format(*right_subject['param'])
@@ -851,6 +859,8 @@ class Command:
         self.param_possible_list.append([])
         # List of "Debug" possible list
         self.param_possible_list.append([])
+
+        print("END OF IF ANALYSIS")
 
         if op_code[4] != 0:
             return ["IF {} {} {} (Subject ID:{}) | ELSE jump {} bytes forward | Debug: {}",

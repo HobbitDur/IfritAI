@@ -325,6 +325,7 @@ class Ennemy():
             end_data = ai_offset + offset_param['offset'] + offset_param['size']
             self.battle_script_data[offset_param['name']] = int.from_bytes(self.file_raw_data[start_data:end_data], offset_param['byteorder'])
 
+        print("AI OFFSET")
         start_data = ai_offset + self.battle_script_data['offset_init_code']
         end_data = ai_offset + self.battle_script_data['offset_ennemy_turn']
         init_code = list(self.file_raw_data[start_data:end_data])
@@ -341,11 +342,17 @@ class Ennemy():
         end_data = section_offset + self.battle_script_data['offset_text_offset']
         before_dying_or_hit_code = list(self.file_raw_data[start_data:end_data])
         list_code = [init_code, ennemy_turn_code, counterattack_code, death_code, before_dying_or_hit_code]
+        print(list_code)
+        print(list_code[2])
+        print(list_code[3])
+        print(list_code[4])
         self.battle_script_data['ai_data'] = []
         for index, code in enumerate(list_code):
+            print(f"index: {index}, code: {code}")
             index_read = 0
             list_result = []
             while index_read < len(code):
+                print(f"index_read: {index_read}")
                 all_op_code_info = game_data.ai_data_json["op_code_info"]
                 op_code_ref = [x for x in all_op_code_info if x["op_code"] == code[index_read]]
                 if not op_code_ref and code[index_read] >= 0x40:
@@ -355,12 +362,20 @@ class Ennemy():
                     op_code_ref = op_code_ref[0]
                     start_param = index_read + 1
                     end_param = index_read + 1 + op_code_ref['size']
+                    if index == 2:
+                        print("Index 2 ready !")
+                        print(code[index_read])
+                        print(code[start_param:end_param])
                     command = Command(code[index_read], code[start_param:end_param], game_data=game_data, battle_text=self.battle_script_data['battle_text'],
                                       info_stat_data=self.info_stat_data, color=game_data.AIData.COLOR)
                     list_result.append(command)
                     index_read += 1 + op_code_ref['size']
+            print("ONE MORE")
+            print(self.battle_script_data['ai_data'])
             self.battle_script_data['ai_data'].append(list_result)
         self.battle_script_data['ai_data'].append([])  # Adding a end section that is empty to mark the end of the all IA section
+        print("LAST AI PRINT")
+        print(self.battle_script_data['ai_data'])
 
     def insert_command(self, code_section_id: int, command: Command, index_insertion: int = 0):
         self.battle_script_data['ai_data'][code_section_id].insert(index_insertion, command)

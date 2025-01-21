@@ -59,7 +59,7 @@ class IfritAIWidget(QWidget):
 
         self.script_section = QComboBox()
         self.script_section.addItems(self.ifrit_manager.game_data.AIData.AI_SECTION_LIST)
-        self.script_section.setCurrentIndex(1)
+        self.script_section.setCurrentIndex(0)
         self.script_section.activated.connect(self.__section_change)
 
         self.button_color_picker = QPushButton()
@@ -76,7 +76,7 @@ class IfritAIWidget(QWidget):
         self.expert_selector_title = QLabel("Expert mode: ")
         self.expert_selector = QComboBox()
         self.expert_selector.addItems(self.EXPERT_SELECTOR_ITEMS)
-        self.expert_selector.setCurrentIndex(2)
+        self.expert_selector.setCurrentIndex(0)
         self.expert_selector.activated.connect(self.__change_expert)
 
         self.expert_layout = QHBoxLayout()
@@ -317,8 +317,9 @@ class IfritAIWidget(QWidget):
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
         if file_to_load:
-            self.__clear_lines()
+            self.__clear_lines(delete_data=True)
             self.ifrit_manager.init_from_file(file_to_load)
+            print("END INIT FROM FILE")
             self.monster_name_label.setText(
                 "Monster : {}, file: {}".format(self.ifrit_manager.ennemy.info_stat_data['monster_name'].get_str(),
                                                 pathlib.Path(file_to_load).name))
@@ -331,13 +332,21 @@ class IfritAIWidget(QWidget):
 
     def __clear_lines(self, delete_data=False):
         command_list = [x.get_command() for x in self.command_line_widget]
+        print("Clear lines")
+        print(len(command_list))
         for command in command_list:
             self.__remove_line(command, delete_data)
 
     def __setup_section_data(self):
+        print("__setup_section_data")
         line_index = 0
         index_section = self.ifrit_manager.game_data.AIData.AI_SECTION_LIST.index(self.script_section.currentText())
         if self.ifrit_manager.ai_data:
+            print( self.ifrit_manager.ai_data)
+            print(len(self.ifrit_manager.ai_data))
+            print(self.ifrit_manager.ai_data[0])
+            print(self.ifrit_manager.ai_data[1])
+            print(self.ifrit_manager.ai_data[2])
             for command in self.ifrit_manager.ai_data[index_section]:
                 command.line_index = line_index
                 command.set_color(self.ifrit_manager.game_data.AIData.COLOR)
