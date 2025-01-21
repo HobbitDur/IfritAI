@@ -59,7 +59,7 @@ class IfritAIWidget(QWidget):
 
         self.script_section = QComboBox()
         self.script_section.addItems(self.ifrit_manager.game_data.AIData.AI_SECTION_LIST)
-        self.script_section.setCurrentIndex(0)
+        self.script_section.setCurrentIndex(1)
         self.script_section.activated.connect(self.__section_change)
 
         self.button_color_picker = QPushButton()
@@ -76,7 +76,7 @@ class IfritAIWidget(QWidget):
         self.expert_selector_title = QLabel("Expert mode: ")
         self.expert_selector = QComboBox()
         self.expert_selector.addItems(self.EXPERT_SELECTOR_ITEMS)
-        self.expert_selector.setCurrentIndex(0)
+        self.expert_selector.setCurrentIndex(3)
         self.expert_selector.activated.connect(self.__change_expert)
 
         self.expert_layout = QHBoxLayout()
@@ -228,7 +228,7 @@ class IfritAIWidget(QWidget):
         remove_button.setText("-")
         remove_button.setFixedSize(30, 30)
         remove_button.clicked.connect(lambda: self.__remove_line(command, delete_data=True))
-
+        print(f"Command line inbdex: {command.line_index}")
         # Creating new element to list
         self.add_button_widget.insert(command.line_index, add_button)
         self.remove_button_widget.insert(command.line_index, remove_button)
@@ -312,7 +312,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        #file_to_load = os.path.join("OriginalFiles", "c0m006.dat")  # For developing faster
+        file_to_load = os.path.join("OriginalFiles", "c0m006.dat")  # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
