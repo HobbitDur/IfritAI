@@ -76,7 +76,7 @@ class IfritAIWidget(QWidget):
         self.expert_selector_title = QLabel("Expert mode: ")
         self.expert_selector = QComboBox()
         self.expert_selector.addItems(self.EXPERT_SELECTOR_ITEMS)
-        self.expert_selector.setCurrentIndex(3)
+        self.expert_selector.setCurrentIndex(2)
         self.expert_selector.activated.connect(self.__change_expert)
 
         self.expert_layout = QHBoxLayout()

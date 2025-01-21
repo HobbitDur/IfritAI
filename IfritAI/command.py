@@ -48,6 +48,8 @@ class Command:
         self.__raw_text = ""
         self.__raw_parameters = []
 
+    def get_size(self):
+        return self.__size
     def set_color(self, color):
         self.__color_param = color
         self.__analyse_op_data()
@@ -727,6 +729,7 @@ class Command:
 
         # Analysing right subject
         right_param_type = [x['param_right_type'] for x in self.game_data.ai_data_json['if_subject'] if x['subject_id'] == subject_id]
+        print(right_param_type)
         if right_param_type:
             right_param_type = right_param_type[0]
 
@@ -739,11 +742,14 @@ class Command:
                 right_subject = {'text': '{}', 'param': [param[0]]}
                 list_param_possible_right = self.__get_possible_status_ai()
             elif right_param_type == 'target_advanced_specific':
+                print("target_advanced_specific")
+                print(op_code)
                 right_subject = {'text': '{}', 'param': [self.__get_target(op_code[3], advanced=True, specific=True)]}
             elif right_param_type == 'text':
-                right_subject = {'text': '{}', 'param': [self.game_data.ai_data_json['if_subject']['right_text']]}
+                right_subject = {'text': '{}', 'param': [x['right_text'] for x in self.game_data.ai_data_json['if_subject'] if x['subject_id'] == subject_id]}
             elif right_param_type == 'target_advanced_generic':
                 right_subject = {'text': '{}', 'param': [self.__get_target(op_code[3], advanced=True, specific=False)]}
+                list_param_possible_right = self.__get_possible_target_advanced_specific()
             elif right_param_type == 'complex' and subject_id == 10:
                 attack_left_text = "{}"
                 attack_left_condition_param = str(op_code[1])
@@ -761,8 +767,8 @@ class Command:
                     list_param_possible_right.extend(self.game_data.ai_data_json['attack_type'])
                     attack_right_condition_param = [self.game_data.ai_data_json['attack_type'][op_code[3]]['type']]
                 elif op_code[1] == 1:
-                    attack_right_condition_param = [self.__get_target(op_code_right_condition_param, advanced=True)]
-                    list_param_possible_right.extend(self.__get_possible_target_advanced())
+                    attack_right_condition_param = [self.__get_target(op_code_right_condition_param, advanced=True, specific=True)]
+                    list_param_possible_right.extend(self.__get_possible_target_advanced_specific())
                 elif op_code[1] == 2:
                     attack_left_condition_param = attack_left_condition_param.format("self")
                 elif op_code[1] == 3:  # Need to handle better the was_magic

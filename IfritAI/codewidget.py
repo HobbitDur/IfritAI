@@ -68,8 +68,13 @@ class CodeWidget(QWidget):
         print("set_ifrit_ai_code_from_command")
         self._command_list = command_list
         func_list = []
+        if_list_count = []
         for command in self._command_list:
             #text = [x[] for x in self.game_data.ai_data_json['op_code_info'] if x['op_code'] == command.get_id()
+            if command.get_id() == 2:# IF
+                op_list = command.get_op_code()
+                jump_value = int.from_bytes(bytearray([op_list[5], op_list[6]]), byteorder='little')
+                #if_list_count
             print(command.get_text(with_size=False, for_code=True))
             func_list.append(command.get_text(with_size=False, for_code=True))
         code_text = ""
@@ -121,6 +126,7 @@ class CodeWidget(QWidget):
         self.__compute_if()
 
     def _compute_text_to_command(self):
+        print("_compute_text_to_command")
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
         for index, line in enumerate(command_text_list):
