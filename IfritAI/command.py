@@ -712,7 +712,7 @@ class Command:
                 if if_subject_left_data["subject_id"] == 2:  # RANDOM VALUE
                     param_left = op_code_left_condition_param - 1  # The random value is between 0 and the param - 1
                 elif if_subject_left_data["subject_id"] == 15:  # ALLY SLOT X IS ALIVE
-                    param_left = op_code_left_condition_param - 3
+                    param_left = op_code_right_condition_param - 3 # Special case where we take the right condition
                 else:
                     print(f"Unexpected subject_id: {if_subject_left_data["subject_id"]}")
                     param_left = op_code_left_condition_param
@@ -740,6 +740,8 @@ class Command:
                 list_param_possible_right = self.__get_possible_status_ai()
             elif right_param_type == 'target_advanced_specific':
                 right_subject = {'text': '{}', 'param': [self.__get_target(op_code[3], advanced=True, specific=True)]}
+            elif right_param_type == 'text':
+                right_subject = {'text': '{}', 'param': [self.game_data.ai_data_json['if_subject']['right_text']]}
             elif right_param_type == 'target_advanced_generic':
                 right_subject = {'text': '{}', 'param': [self.__get_target(op_code[3], advanced=True, specific=False)]}
             elif right_param_type == 'complex' and subject_id == 10:

@@ -84,6 +84,8 @@ class CodeWidget(QWidget):
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
         for index, line in enumerate(command_text_list):
+            if line == "":
+                continue
             new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index, code_text=line)
             self._command_list.append(new_command)
