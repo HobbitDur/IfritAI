@@ -16,7 +16,7 @@ from .ifritmanager import IfritManager
 
 class IfritAIWidget(QWidget):
     ADD_LINE_SELECTOR_ITEMS = ["Condition", "Command"]
-    EXPERT_SELECTOR_ITEMS = ["User-friendly", "Hex-editor", "Code-expert"]
+    EXPERT_SELECTOR_ITEMS = ["User-friendly", "Hex-editor", "Raw-code", "IfritAI-code"]
     MAX_COMMAND_PARAM = 7
     MAX_OP_ID = 61
     MAX_OP_CODE_VALUE = 255
@@ -59,6 +59,7 @@ class IfritAIWidget(QWidget):
 
         self.script_section = QComboBox()
         self.script_section.addItems(self.ifrit_manager.game_data.AIData.AI_SECTION_LIST)
+        self.script_section.setCurrentIndex(1)
         self.script_section.activated.connect(self.__section_change)
 
         self.button_color_picker = QPushButton()
@@ -75,6 +76,7 @@ class IfritAIWidget(QWidget):
         self.expert_selector_title = QLabel("Expert mode: ")
         self.expert_selector = QComboBox()
         self.expert_selector.addItems(self.EXPERT_SELECTOR_ITEMS)
+        self.expert_selector.setCurrentIndex(3)
         self.expert_selector.activated.connect(self.__change_expert)
 
         self.expert_layout = QHBoxLayout()
@@ -101,7 +103,7 @@ class IfritAIWidget(QWidget):
         self.layout_top.addWidget(self.monster_name_label)
         self.layout_top.addStretch(1)
 
-        self.code_widget = CodeWidget(self.ifrit_manager.game_data, ennemy_data=self.ifrit_manager.ennemy, code_changed_hook=self.code_expert_changed_hook)
+        self.code_widget = CodeWidget(self.ifrit_manager.game_data, ennemy_data=self.ifrit_manager.ennemy, expert_level=self.expert_selector.currentIndex(), code_changed_hook=self.code_expert_changed_hook)
         self.code_widget.hide()
 
         self.main_horizontal_layout = QHBoxLayout()
@@ -111,6 +113,7 @@ class IfritAIWidget(QWidget):
 
         self.ai_layout = QVBoxLayout()
         self.main_horizontal_layout.addLayout(self.ai_layout)
+        self.ai_layout.addLayout(QHBoxLayout())
         self.ai_layout.addStretch(1)
         self.command_line_widget = []
         self.ai_line_layout = []
@@ -120,7 +123,6 @@ class IfritAIWidget(QWidget):
         self.scroll_widget.setLayout(self.layout_main)
         self.layout_main.addLayout(self.layout_top)
         self.layout_main.addLayout(self.main_horizontal_layout)
-        self.layout_main.addStretch(1)
 
         self.show()
 
@@ -134,7 +136,7 @@ class IfritAIWidget(QWidget):
 
     def __hide_show_expert(self):
         expert_chosen = self.expert_selector.currentIndex()
-        if expert_chosen == 2:  # Expert mode
+        if expert_chosen == 2 or expert_chosen == 3:  # Expert mode
             self.code_widget.show()
             for i in range(len(self.add_button_widget)):
                 self.add_button_widget[i].hide()
@@ -155,8 +157,14 @@ class IfritAIWidget(QWidget):
         self._set_text_expert()
 
     def _set_text_expert(self):
+        expert_chosen = self.expert_selector.currentIndex()
         command_list = [command_widget.get_command() for command_widget in self.command_line_widget]
-        self.code_widget.set_text_from_command(command_list)
+        if expert_chosen == 2:  # Raw data
+            self.code_widget.set_text_from_command(command_list)
+        elif expert_chosen == 3:  # IfritAI language
+            self.code_widget.set_ifrit_ai_code_from_command(command_list)
+        if expert_chosen in (2,3):
+            self.code_widget.change_expert_level(expert_chosen)
 
     def __change_hex(self):
         hex_chosen = self.hex_selector.isChecked()
@@ -227,15 +235,15 @@ class IfritAIWidget(QWidget):
         command_widget = CommandWidget(command, self.expert_selector.currentIndex(), self.hex_selector.isChecked())
         command_widget.op_id_changed_signal_emitter.op_id_signal.connect(self.__compute_if)
         self.command_line_widget.insert(command.line_index, command_widget)
-        self.ai_line_layout.insert(command.line_index, QHBoxLayout())
 
         # Adding widget to layout
+        self.ai_line_layout.insert(command.line_index, QHBoxLayout())
         self.ai_line_layout[command.line_index].addWidget(self.add_button_widget[command.line_index])
         self.ai_line_layout[command.line_index].addWidget(self.remove_button_widget[command.line_index])
         self.ai_line_layout[command.line_index].addWidget(self.command_line_widget[command.line_index])
-
         # Adding to the "main" layout
         self.ai_layout.insertLayout(command.line_index, self.ai_line_layout[command.line_index])
+
 
     def __remove_line(self, command, delete_data=True):
         # Removing the widget
@@ -246,15 +254,15 @@ class IfritAIWidget(QWidget):
                 index_to_remove = index
             elif command_widget.get_command().line_index > command.line_index:
                 command_widget.get_command().line_index -= 1
-        if delete_data:
-            self.ifrit_manager.ennemy.remove_command(self.script_section.currentIndex(), index_to_remove)
+        #if delete_data:
+        #    self.ifrit_manager.ennemy.remove_command(self.script_section.currentIndex(), index_to_remove)
 
-        self.add_button_widget[index_to_remove].setParent(None)
         self.add_button_widget[index_to_remove].deleteLater()
-        self.remove_button_widget[index_to_remove].setParent(None)
+        self.add_button_widget[index_to_remove].setParent(None)
         self.remove_button_widget[index_to_remove].deleteLater()
-        self.command_line_widget[index_to_remove].setParent(None)
+        self.remove_button_widget[index_to_remove].setParent(None)
         self.command_line_widget[index_to_remove].deleteLater()
+        self.command_line_widget[index_to_remove].setParent(None)
         # Deleting element from list
         del self.add_button_widget[index_to_remove]
         del self.remove_button_widget[index_to_remove]
@@ -304,7 +312,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        # file_to_load = os.path.join("OriginalFiles", "c0m046.dat") # For developing faster
+        # file_to_load = os.path.join("OriginalFiles", "c0m046.dat")  # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]

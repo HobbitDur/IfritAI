@@ -62,14 +62,11 @@ class CommandWidget(QWidget):
         self.layout_text.addLayout(self.layout_text_spacing)
         self.layout_text.addWidget(self.widget_text)
 
-        self.layout_stretch = QHBoxLayout()
-        self.layout_stretch.addStretch(1)
 
         self.main_layout.addLayout(self.layout_id)
         self.main_layout.addLayout(self.layout_op_code)
         self.main_layout.addWidget(self.frame_text)
         self.main_layout.addLayout(self.layout_text)
-        self.main_layout.addLayout(self.layout_stretch)
 
         self.__hide_show_expert()
 
@@ -96,7 +93,7 @@ class CommandWidget(QWidget):
 
 
     def __hide_show_expert(self):
-        if self._expert_chosen == 2:
+        if self._expert_chosen == 2 or self._expert_chosen == 3:
             for i in range(len(self.widget_op_code)):
                 self.widget_op_code[i].hide()
                 if i >= len(self._command.get_op_code()):
