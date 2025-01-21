@@ -72,11 +72,20 @@ class CodeWidget(QWidget):
         for command in self._command_list:
             #text = [x[] for x in self.game_data.ai_data_json['op_code_info'] if x['op_code'] == command.get_id()
             if command.get_id() == 2:# IF
-                op_list = command.get_op_code()
-                jump_value = int.from_bytes(bytearray([op_list[5], op_list[6]]), byteorder='little')
-                #if_list_count
-            print(command.get_text(with_size=False, for_code=True))
-            func_list.append(command.get_text(with_size=False, for_code=True))
+                func_list.append(command.get_text(with_size=False, for_code=True))
+
+                #op_list = command.get_op_code()
+                #jump_value = int.from_bytes(bytearray([op_list[5], op_list[6]]), byteorder='little')
+                #if_list_count.append(jump_value)
+                #print("IFIFIFIFIFIFI")
+                #print(command.get_text(with_size=False, for_code=True))
+                #command_text = command.get_text(with_size=False, for_code=True)
+                #command_text = command_text.split('|')[0]
+                #func_list.append(command_text)
+
+            else:
+                print(command.get_text(with_size=False, for_code=True))
+                func_list.append(command.get_text(with_size=False, for_code=True))
         code_text = ""
         for func_name in func_list:
             code_text += func_name
