@@ -4,6 +4,8 @@ from FF8GameData.gamedata import GameData
 from IfritAI.command import Command
 
 class CodeAnalyseTool:
+    def __init__(self):
+        self.counter = 0
     @classmethod
     def searching_if(cls, lines:List[str], if_func_name:str):
         print(f"searching_if")
@@ -44,13 +46,17 @@ class CodeAnalyseTool:
     def analyse_loop(cls, section_lines, func_name, game_data, enemy_data):
         command_list = []
         print("Starting looping !")
+        counter = 0
         while True:
+            if counter ==2:
+                break
             command_list_temp, if_index, last_line = CodeAnalyseTool().analyse_one_round(section_lines,func_name, game_data,enemy_data)
             print(f"One round done: if_index: {if_index}, last_line: {last_line}")
             print(f"command_list_temp: {command_list_temp}, ")
             command_list.extend(command_list_temp)
             if if_index < 0:
                 break
+            counter +=1
         command_list.extend(CodeAnalyseTool.analyse_lines(section_lines[last_line:], game_data,enemy_data))
         return command_list
 
@@ -73,6 +79,7 @@ class CodeAnalyseTool:
         last_line = end_analyse_line
         # Analysing the if section if found one
         if if_start_index != -1:
+            print("Analysing the fresh if found")
             if_section_command_list = CodeIfSection(game_data, enemy_data, section_lines[if_start_index: if_end_index + 1], if_start_index)
             command_list.extend(if_section_command_list.get_command())
             last_line+=if_section_command_list.get_size()
@@ -168,7 +175,7 @@ class CodeAnalyser:
         print("Starting analysing the code")
         print(f"Split text: {self._section_lines}")
         self._command_list = CodeAnalyseTool.analyse_loop( self._section_lines,op_if_info['func_name'], self.game_data, self.enemy_data)
-        print(f"Coode analyser list: { self._command_list}")
+        print(f"Code analyser list: { self._command_list}")
 
     def get_command(self):
         return self._command_list
