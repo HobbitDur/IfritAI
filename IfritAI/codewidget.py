@@ -4,6 +4,7 @@ from typing import List
 from PyQt6.QtWidgets import QWidget, QTextEdit, QHBoxLayout, QPushButton, QVBoxLayout, QSizePolicy
 
 from FF8GameData.gamedata import GameData
+from IfritAI.codeanalyser import CodeAnalyser
 from IfritAI.command import Command
 from IfritAI.ennemy import Ennemy
 
@@ -100,7 +101,10 @@ class CodeWidget(QWidget):
                 command_text = command_text.split('|')[0]
                 if last_was_else_for_if:
                     command_text = command_text.replace('IF', "ELIF")
-                func_list.append(command_text)
+                op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
+                func_line_text = op_info['func_name'] + ": "
+                func_line_text += command_text
+                func_list.append(func_line_text)
                 func_list.append('{')
 
             else:
@@ -112,7 +116,11 @@ class CodeWidget(QWidget):
                     continue
 
                 print(command.get_text(with_size=False, for_code=True))
-                func_list.append(command.get_text(with_size=False, for_code=True))
+                op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
+                func_line_text = op_info['func_name'] + ": "
+                func_line_text += command.get_text(with_size=False, for_code=True)
+                func_list.append(func_line_text)
+
         code_text = ""
         for func_name in func_list:
             code_text += func_name
@@ -124,105 +132,113 @@ class CodeWidget(QWidget):
         print("compute ifrit start")
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
+        #
+        # # First analyse everything between { }
+        # print("First analyse")
+        # between_bracket = False
+        # useful_line_index = 0
+        # for index, line in enumerate(command_text_list):
+        #     print(f"index: {index}, line: {line}")
+        #     if line == "":
+        #         continue
+        #     elif line.replace(' ', '') == "{":
+        #         between_bracket = True
+        #         continue
+        #     elif line.replace(' ', '') == "}":
+        #         between_bracket = False
+        #         continue
+        #     elif "IF" in line:
+        #         useful_line_index+=1
+        #         continue
+        #     elif "ELIF" in line:
+        #         useful_line_index+=1
+        #         continue
+        #     if between_bracket:
+        #         print("between_bracket")
+        #         new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
+        #                               battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_line_index, code_text=line)
+        #         self._command_list.append(new_command)
+        #         useful_line_index += 1
+        #         print(self._command_list)
+        #
+        #
+        # # Then analysing IF
+        # print("Second analyse")
+        # print(self._command_list)
+        # if_found = True
+        # count_while = 0
+        # while if_found:
+        #     print("Looping while")
+        #     useful_line_index = 0
+        #     real_if_line_index = 0
+        #     count_while +=1
+        #     if_found = False
+        #     in_if_counting = False
+        #     if_line_index = 0
+        #     counting_if = 0
+        #     for index, line in enumerate(command_text_list):
+        #         print(f"index: {index}, line: {line}")
+        #         print(f" counting_if:{counting_if}")
+        #         print(f" if_line_index:{if_line_index}")
+        #         print(f"if_found:{if_found}")
+        #         if 'IF' in line and 'ELSE' not in line:
+        #             print("IF WITHOUT ELSE FOUND")
+        #             counting_if = 0
+        #             useful_if_line_index = useful_line_index
+        #             real_if_line_index = index
+        #             if_found = True
+        #             in_if_counting = True
+        #             useful_line_index+=1
+        #             continue
+        #         elif 'IF' in line:
+        #             useful_line_index += 1
+        #             continue
+        #         elif line.replace(' ', '') == "{":
+        #             print("{ found")
+        #             continue
+        #         elif line.replace(' ', '') == "}": # End of counting
+        #             print("} found")
+        #             if counting_if == 0: # Already managed if
+        #                 continue
+        #             command_text_list[real_if_line_index] += f"| ELSE jump {{{counting_if+3}}} bytes forward"
+        #             print(f"Command: {command_text_list[real_if_line_index]}")
+        #             print(f"useful_if_line_index: {useful_if_line_index}")
+        #             new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
+        #                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_if_line_index, code_text=command_text_list[real_if_line_index])
+        #             self._command_list.insert(useful_if_line_index, new_command)
+        #             new_command = Command(35, [0,0], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
+        #                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_line_index)
+        #
+        #             self._command_list.insert(useful_line_index, new_command)
+        #             counting_if = 0
+        #             in_if_counting = False
+        #             continue
+        #
+        #         elif "ELIF" in line:#TODO
+        #             print("ELIF")
+        #             line = line.replace('ELIF', 'IF')
+        #             new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
+        #                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index, code_text=line)
+        #             self._command_list.append(new_command)
+        #         else:
+        #             current_command = [x.get_size() for x in self._command_list if x.line_index == useful_line_index]
+        #             if current_command and in_if_counting:
+        #                 counting_if += current_command[0]
+        #             else:
+        #                 print(f"No current command found on index: {index} for command list: {self._command_list}")
+        #             useful_line_index += 1
+        #     if not if_found:
+        #         break
+        #     if count_while > 3:
+        #         exit(-1)
 
-        # First analyse everything between { }
-        print("First analyse")
-        between_bracket = False
-        useful_line_index = 0
-        for index, line in enumerate(command_text_list):
-            print(f"index: {index}, line: {line}")
-            if line == "":
-                continue
-            elif line.replace(' ', '') == "{":
-                between_bracket = True
-                continue
-            elif line.replace(' ', '') == "}":
-                between_bracket = False
-                continue
-            elif "IF" in line:
-                useful_line_index+=1
-                continue
-            elif "ELIF" in line:
-                useful_line_index+=1
-                continue
-            if between_bracket:
-                print("between_bracket")
-                new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-                                      battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_line_index, code_text=line)
-                self._command_list.append(new_command)
-                useful_line_index += 1
-                print(self._command_list)
-
-
-        # Then analysing IF
-        print("Second analyse")
-        print(self._command_list)
-        if_found = True
-        count_while = 0
-        while if_found:
-            print("Looping while")
-            useful_line_index = 0
-            real_if_line_index = 0
-            count_while +=1
-            if_found = False
-            in_if_counting = False
-            if_line_index = 0
-            counting_if = 0
-            for index, line in enumerate(command_text_list):
-                print(f"index: {index}, line: {line}")
-                print(f" counting_if:{counting_if}")
-                print(f" if_line_index:{if_line_index}")
-                print(f"if_found:{if_found}")
-                if 'IF' in line and 'ELSE' not in line:
-                    print("IF WITHOUT ELSE FOUND")
-                    counting_if = 0
-                    useful_if_line_index = useful_line_index
-                    real_if_line_index = index
-                    if_found = True
-                    in_if_counting = True
-                    useful_line_index+=1
-                    continue
-                elif 'IF' in line:
-                    useful_line_index += 1
-                    continue
-                elif line.replace(' ', '') == "{":
-                    print("{ found")
-                    continue
-                elif line.replace(' ', '') == "}": # End of counting
-                    print("} found")
-                    if counting_if == 0: # Already managed if
-                        continue
-                    command_text_list[real_if_line_index] += f"| ELSE jump {{{counting_if+3}}} bytes forward"
-                    print(f"Command: {command_text_list[real_if_line_index]}")
-                    print(f"useful_if_line_index: {useful_if_line_index}")
-                    new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-                                          battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_if_line_index, code_text=command_text_list[real_if_line_index])
-                    self._command_list.insert(useful_if_line_index, new_command)
-                    new_command = Command(35, [0,0], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-                                          battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_line_index)
-
-                    self._command_list.insert(useful_line_index, new_command)
-                    counting_if = 0
-                    in_if_counting = False
-                    continue
-
-                elif "ELIF" in line:#TODO
-                    print("ELIF")
-                    line = line.replace('ELIF', 'IF')
-                    new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-                                          battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index, code_text=line)
-                    self._command_list.append(new_command)
-                else:
-                    current_command = [x.get_size() for x in self._command_list if x.line_index == useful_line_index]
-                    if current_command and in_if_counting:
-                        counting_if += current_command[0]
-                    else:
-                        print(f"No current command found on index: {index} for command list: {self._command_list}")
-                    useful_line_index += 1
-            if not if_found:
-                break
-            if count_while > 3:
-                exit(-1)
+        code_analyser = CodeAnalyser(self.game_data, self.ennemy_data, command_text_list)
+        self._command_list = code_analyser.get_command()
+        for command in self._command_list:
+            print(command.get_text(with_size=False, for_code=True))
+            op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
+            func_line_text = op_info['func_name'] + ": "
+            func_line_text += command.get_text(with_size=False, for_code=True)
         self.code_changed_hook(self._command_list)
         # self.__compute_indent_bracket()
         print("compute ifrit end")

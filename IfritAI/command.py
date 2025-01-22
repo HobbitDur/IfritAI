@@ -5,7 +5,7 @@ import re
 class Command:
 
     def __init__(self, op_id: int, op_code: list, game_data: GameData, battle_text=(), info_stat_data={},
-                 line_index=0, color="#0055ff", code_text=None):
+                 line_index=0, color="#0055ff"):
         self.__op_id = op_id
         self.__op_code = op_code
         self.__battle_text = battle_text
@@ -25,10 +25,7 @@ class Command:
         self.__size = 0
         self.__raw_text = ""
         self.__raw_parameters = []
-        if not code_text:
-            self.__analyse_op_data()
-        else:
-            self.__analyse_text_data(code_text)
+        self.__analyse_op_data()
 
     def __str__(self):
         return f"ID: {self.__op_id}, op_code: {self.__op_code}, text: {self.get_text()}"
@@ -101,6 +98,7 @@ class Command:
         return op_research
 
     def __analyse_text_data(self, code_text):
+        """Deprecated function (even if it worked well). The idea was to test all possible op in the json and compare with the one given"""
         op_code_list = re.findall(r"\{(.*?)\}", code_text)
         text_without_op_code = code_text
         for match in op_code_list:
