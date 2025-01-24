@@ -1,3 +1,4 @@
+from math import floor
 from typing import List
 import re
 from FF8GameData.gamedata import GameData
@@ -76,7 +77,11 @@ class CodeAnalyseTool:
         # Analysing the if section if found one
         if if_start_index != -1:
             if func_found == if_func_name:
-                section_command_list = CodeIfSection(game_data, enemy_data, section_lines[if_start_index: if_end_index + 1], if_start_index)
+                if len(section_lines) > if_end_index + 1:
+                    next_line  = section_lines[if_end_index + 1]
+                else:
+                    next_line = ""
+                section_command_list = CodeIfSection(game_data, enemy_data, section_lines[if_start_index: if_end_index + 1], if_start_index, next_line)
             elif func_found == else_func_name:
                 section_command_list = CodeElseSection(game_data, enemy_data, section_lines[if_start_index: if_end_index + 1], if_start_index)
             else:
@@ -145,6 +150,14 @@ class CodeLine:
                     byte1 = int.from_bytes([jump_2_byte[0]])
                     byte2 = int.from_bytes([jump_2_byte[1]])
                     op_code_list = [byte1, byte2]
+            elif op_info['op_code'] == 45 and len(op_code_list) == 2:
+                print(op_code_list)
+                target = 900 - int(op_code_list[1])
+                low_byte = target // 256
+                high_byte = target - (low_byte*256)
+                op_code_list[1] = high_byte
+                op_code_list.append(low_byte)
+                print(op_code_list)
             else:
                 print(
                     f"When analysing command, wrong size of parameter ({len(op_code_list)} instead of {op_info['size']}) with op id unexpected {op_info['op_code']}")
@@ -162,13 +175,15 @@ class CodeLine:
 
 
 class CodeIfSection:
-    def __init__(self, game_data: GameData, enemy_data, section_lines, line_index):
+    def __init__(self, game_data: GameData, enemy_data, section_lines, line_index, next_line:str):
         self._section_lines = section_lines
         self._line_index = line_index
         self.game_data = game_data
         self.enemy_data = enemy_data
         self._command_list = []
         self._section_size = 0
+        self._next_line = next_line
+        self._connected_else = False
         self.analyse_section()
 
     def analyse_section(self):
@@ -196,10 +211,15 @@ class CodeIfSection:
         # Analysing the content of the IF
         self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], op_else_info['func_name'],
                                                           self.game_data, self.enemy_data)
-        # Adding an endif to the if
-        end_command = Command(op_id=35, op_code=[0, 0], game_data=self.game_data, info_stat_data=self.enemy_data.info_stat_data,
-                              line_index=self._line_index + len(self._section_lines) - 1)
-        self._command_list.append(end_command)
+        # Adding an endif to the if only if next is not an else
+        else_name = op_else_info['func_name'] + ":"
+        if not else_name in self._next_line:
+            end_command = Command(op_id=35, op_code=[0, 0], game_data=self.game_data, info_stat_data=self.enemy_data.info_stat_data,
+                                  line_index=self._line_index + len(self._section_lines) - 1)
+            self._command_list.append(end_command)
+        else:
+            # As we don't add the ENDIF here, but still need to jump over the jump func, we had the 3 size
+            self._connected_else = True
         # Now we can insert on first line the complete if
         if_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{{{self.get_size()}}}",
                               line_index=self._line_index)
@@ -215,6 +235,8 @@ class CodeIfSection:
         size = 0
         for command in self._command_list:
             size += command.get_size()
+        if  self._connected_else:
+            size+= 3
         return size
 
 

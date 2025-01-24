@@ -1,3 +1,5 @@
+from math import floor
+
 from FF8GameData.gamedata import GameData
 import re
 
@@ -86,21 +88,32 @@ class Command:
             for parameter in self.__raw_parameters:
                 parameters.append('{' + str(parameter) + '}')
 
-        for i in range(len(parameters)):# Adding sepcial text computation
-            for text_added in self.__raw_text_added:
-                if text_added['id'] == i:
-                    parameters[i] =  parameters[i] + text_added['text']
+
         if html:
             for i in range(len(self.game_data.ai_data_json['list_comparator_html'])):
                 text = text.replace(self.game_data.ai_data_json['list_comparator'][i], self.game_data.ai_data_json['list_comparator_html'][i])
                 for j in range(len(parameters)):
-                    parameters[j] = str(parameters[j]).replace(self.game_data.ai_data_json['list_comparator'][i],self.game_data.ai_data_json['list_comparator_html'][i])
+                    parameters[j] = parameters[j].replace(self.game_data.ai_data_json['list_comparator'][i],
+                                                               self.game_data.ai_data_json['list_comparator_html'][i])
             for i in range(len(parameters)):
-                parameters[i] = '<span style="color:' + self.__color_param + ';">' +parameters[i] + '</span>'
+                parameters[i] = '<span style="color:' + self.__color_param + ';">' + parameters[i] + '</span>'
+
+
+        for i in range(len(parameters)):  # Adding special text computation
+            for text_added in self.__raw_text_added:
+                if text_added['id'] == i:
+                    if html:
+                        parameters[i] = parameters[i] + text_added['text_html']
+                    else:
+                        parameters[i] = parameters[i] + text_added['text']
         if not raw:
             text = text.format(*parameters)
         if with_size:
             text += " (size:{}bytes)".format(self.__size)
+        # Removing return line as we compute line by line
+        if for_code:
+            text = text.replace('<br/>', '')
+            text = text.replace('<br>', '')
 
         return text
 
@@ -234,8 +247,17 @@ class Command:
             # Expanding jump
             op_code_list[5] = int(op_code_list[5])
             op_code_list[6] = int(op_code_list[6])
+        elif op_info['op_code'] == 45:
+            op_code_list[0] = [x['id'] for x in self.game_data.magic_data_json['magic_type'] if x['name']== op_code_list[0]]
+            if op_code_list[0]:
+                op_code_list[0] = op_code_list[0][0]
+            else:
+                print("Unexpected magic type for elem id 45")
+            op_code_list[1] = int(op_code_list[1])
+            op_code_list[2] = int(op_code_list[2])
 
         self.set_op_code(op_code_list)
+
     def __analyse_text_data_old(self, code_text):
         """Deprecated function (even if it worked well). The idea was to test all possible op in the json and compare with the one given"""
         op_code_list = re.findall(r"\{(.*?)\}", code_text)
@@ -484,7 +506,6 @@ class Command:
     def __analyse_op_data(self):
         self.reset_data()
         op_info = self.__get_op_code_line_info()
-        added_raw_text_list = []
         # Searching for errors in json file
         if len(op_info["param_type"]) != op_info["size"] and op_info['complexity'] == 'simple':
             print(f"Error on JSON for op_code_id: {self.__op_id}")
@@ -562,10 +583,10 @@ class Command:
                         possible_ability_values.append({'id': i, 'data': text})
                         if self.__op_code[op_index] == i:
                             param_value.append(f"{i}")
-                            self.__raw_text_added.append({"id":len(param_value) - 1, "text": " (" + text + " )"})
+                            self.__raw_text_added.append({"id": len(param_value) - 1, "text": " (" + text + " )", "text_html": " (" + text + " )<br/>"})
                     if self.__op_code[op_index] >= nb_abilities:
                         param_value.append(253)
-                        added_raw_text_list.append(" (None)")
+                        self.__raw_text_added.append(" (None)")
                     else:
                         possible_ability_values.append({'id': 0, 'data': "None"})  # 253 for None value is often used by monsters.
                     self.param_possible_list.append(possible_ability_values)
@@ -633,8 +654,6 @@ class Command:
             for i, param_index in enumerate(op_info['param_index']):
                 self.param_possible_list[param_index] = original_param_possible[i]
 
-
-
             self.__raw_text = op_info['text']
             self.__raw_parameters = param_value
 
@@ -642,7 +661,7 @@ class Command:
             call_function = getattr(self, "_Command__op_" + "{:02}".format(op_info["op_code"]) + "_analysis")
             call_result = call_function(self.__op_code)
             self.__raw_text = call_result[0]
-            self.__raw_parameters =[str(x)  for x in call_result[1]]
+            self.__raw_parameters = [str(x) for x in call_result[1]]
         self.__size = op_info['size'] + 1
 
     def __get_possible_target_advanced_specific(self):
@@ -700,19 +719,21 @@ class Command:
 
     def __op_45_analysis(self, op_code):
         # op_2D = ['element', 'elementval', '?']
-        if op_code[0] < len(self.game_data.magic_data_json['magic']):
-            element = self.game_data.magic_data_json['magic'][op_code[0]]
+        if op_code[0] < len(self.game_data.magic_data_json['magic_type']):
+            element = self.game_data.magic_data_json['magic_type'][op_code[0]]['name']
         else:
             element = "UNKNOWN ELEMENT TYPE"
-        element_val = op_code[1]
-        op_code_unknown = op_code[2]
+
+        target = op_code[1] + 256 * op_code[2]
+        element_val = 900 - target
+
         param_possible = []
         for i in range(len(self.game_data.magic_data_json['magic'])):
             param_possible.append({'id': i, 'data': self.game_data.magic_data_json['magic'][i]['name']})
         self.param_possible_list.append(param_possible)
         self.param_possible_list.append([])
         self.param_possible_list.append([])
-        return ['Resist element {} at {}, unknown value (impact on resist element): {}', [element, element_val, op_code_unknown]]
+        return ['SET DAMAGE TAKEN BY {} to {}%', [element, element_val]]
 
     def __op_26_analysis(self, op_code):
         analysis = self.__op_01_analysis(op_code)
@@ -889,8 +910,8 @@ class Command:
         elif subject_id > 19:
             right_subject = {'text': '{}', 'param': [int(op_code_right_condition_param)]}
         else:
-                print(f"Unexpected subject ID ({subject_id}) for right_param_type analysis")
-                right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
+            print(f"Unexpected subject ID ({subject_id}) for right_param_type analysis")
+            right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
         left_subject_text = left_subject['text'].format(left_subject['param'])
         right_subject_text = right_subject['text'].format(*right_subject['param'])
 

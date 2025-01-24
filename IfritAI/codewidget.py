@@ -78,6 +78,16 @@ class CodeWidget(QWidget):
                 if_list_count[i] -= command.get_size()
                 if if_list_count[i] == 0:
                     func_list.append('}')
+            for i in range(len(else_list_count)):
+                if else_list_count[i] == 0:
+                    # if command.get_id() == 2:
+                    #     op_list = command.get_op_code()
+                    #     jump_value = int.from_bytes(bytearray([op_list[5], op_list[6]]), byteorder='little')
+                    #     else_list_count[i]+=jump_value + command.get_size() # Adding size of if as we compute it in the same turn
+                    # elif command.get_id() != 2:  # If we jump to a if, means we are still in the else, just forward jumping
+                    func_list.append('}')
+            while 0 in else_list_count:
+                else_list_count.remove(0)
             while 0 in if_list_count:
                 if_list_count.remove(0)
             op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
@@ -92,13 +102,11 @@ class CodeWidget(QWidget):
                 func_list.append(func_line_text)
                 func_list.append('{')
             elif command.get_id() == 35:
-                print("New else found")
                 op_list = command.get_op_code()
                 jump_value = int.from_bytes(bytearray([op_list[0], op_list[1]]), byteorder='little')
                 if jump_value > 0:# We don't add the endif
                     last_else = True
                     else_list_count.append(jump_value)# Adding the else size himself
-                    print(f" else count after adding{else_list_count}")
                     command_text = "ELSE"
                     func_line_text = op_info['func_name'] + ": "
                     func_line_text += command_text
@@ -110,18 +118,10 @@ class CodeWidget(QWidget):
                 func_line_text += command.get_text(with_size=False, for_code=True, html=True)
                 func_list.append(func_line_text)
             # The else are closing after the function (you don't count the jump contrary to an if
-            print(f" else count before loop: {else_list_count}")
-            print(f" len list count: {len(else_list_count)}")
             for i in range(len(else_list_count)):
-                print(f"i: {i}")
                 if i == len(else_list_count) -1 and last_else:# Don't update the else we just added with his own size !
                     continue
                 else_list_count[i] -= command.get_size()
-                if else_list_count[i] == 0:
-                    func_list.append('}')
-            while 0 in else_list_count:
-                else_list_count.remove(0)
-            print(f"Else count: {else_list_count}")
 
         func_list = self.__compute_indent_bracket(func_list)
         code_text = ""

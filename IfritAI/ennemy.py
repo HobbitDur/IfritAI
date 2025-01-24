@@ -118,14 +118,20 @@ class Ennemy():
             offset_value_current_section += offset['size']
         raw_ai_section = bytearray()
         raw_ai_offset = bytearray()
+
         for index, section in enumerate(self.battle_script_data['ai_data']):
             if section:  # Ignoring the last section that is empty
                 raw_ai_offset.extend(
                     self.__get_byte_from_int_from_game_data(offset_value_current_section, game_data.AIData.SECTION_BATTLE_SCRIPT_AI_OFFSET_LIST_DATA[index]))
+                # For reason, each AI section need to be a multiple of 4, so adding Stop till this is the case
+                section_size = 0
                 for command in section:
+                    section_size += command.get_size()
                     raw_ai_section.append(command.get_id())
                     raw_ai_section.extend(command.get_op_code())
                     offset_value_current_section += 1 + len(command.get_op_code())
+                while section_size % 4 != 0:
+                    raw_ai_section.extend([0x00])
 
         # Now changing text offset
         sect_data = game_data.AIData.SECTION_BATTLE_SCRIPT_HEADER_OFFSET_TEXT_OFFSET_SUB

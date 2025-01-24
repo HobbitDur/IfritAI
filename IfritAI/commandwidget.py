@@ -18,7 +18,7 @@ class CommandWidget(QWidget):
     MAX_OP_CODE_VALUE = 255
     MIN_OP_CODE_VALUE = 0
 
-    def __init__(self, command: Command, expert_chosen=0, print_hex = False):
+    def __init__(self, command: Command, expert_chosen=0, print_hex=False):
         QWidget.__init__(self)
         # Parameters
         self._command = command
@@ -33,7 +33,6 @@ class CommandWidget(QWidget):
 
         # op_id widget
         self.op_id_widget = QSpinBox()
-
 
         # Line for cool gui
         frame = QFrame()
@@ -63,7 +62,6 @@ class CommandWidget(QWidget):
         self.layout_text.addLayout(self.layout_text_spacing)
         self.layout_text.addWidget(self.widget_text)
 
-
         self.main_layout.addLayout(self.layout_id)
         self.main_layout.addLayout(self.layout_op_code)
         self.main_layout.addWidget(self.frame_text)
@@ -73,6 +71,7 @@ class CommandWidget(QWidget):
 
     def get_command(self):
         return self._command
+
     def set_command(self, command):
         self._command = command
         self.__reset_op_id_widget()
@@ -92,7 +91,6 @@ class CommandWidget(QWidget):
         self.__reset_op_code_widget()
         self.__hide_show_expert()
 
-
     def __hide_show_expert(self):
         if self._expert_chosen == 2 or self._expert_chosen == 3:
             for i in range(len(self.widget_op_code)):
@@ -105,8 +103,6 @@ class CommandWidget(QWidget):
             self.frame_text.hide()
         else:
             self.frame_text.show()
-
-
 
     def change_print_hex(self, print_hex):
         self._print_hex = print_hex
