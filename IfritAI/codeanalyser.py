@@ -10,15 +10,20 @@ class CodeAnalyseTool:
         self.counter = 0
 
     @classmethod
-    def searching_if(cls, lines: List[str], if_func_name: str):
+    def searching_if(cls, lines: List[str], if_func_name: str, else_func_name:str):
         print(f"searching_if")
         print(f"lines: {lines}")
         # Now searching for IF in the section
         index_start_if = -1
         index_end_if = -1
+        func_found=None
         for i in range(len(lines)):
             print(f"Current line: {lines[i]}")
-            if if_func_name + ":" in lines[i].replace(' ', ''):  # New if found
+            if if_func_name + ":" in lines[i].replace(' ', '') or else_func_name + ":" in lines[i].replace(' ', '') :  # New if found
+                if if_func_name + ":" in lines[i].replace(' ', ''):
+                    func_found = if_func_name
+                else:
+                    func_found = else_func_name
                 print("New if found !")
                 index_start_if = i
                 # Now searching the end
@@ -35,7 +40,8 @@ class CodeAnalyseTool:
                         index_end_if = j
                         break
                 break
-        return index_start_if, index_end_if
+
+        return index_start_if, index_end_if, func_found
 
     @classmethod
     def analyse_lines(cls, section_lines:List[str], game_data:GameData, enemy_data:Ennemy):
@@ -46,14 +52,14 @@ class CodeAnalyseTool:
         return command_list
 
     @classmethod
-    def analyse_loop(cls, section_lines: List[str], func_name: str, game_data: GameData, enemy_data: Ennemy):
+    def analyse_loop(cls, section_lines: List[str], if_func_name: str, else_func_name:str,  game_data: GameData, enemy_data: Ennemy):
         command_list = []
         print("Starting looping !")
         last_line = 0
         while True:
             print(f"Calling one round with: {section_lines[last_line:]}")
 
-            command_list_temp, if_index, round_last_line = CodeAnalyseTool().analyse_one_round(section_lines[last_line:], func_name, game_data, enemy_data)
+            command_list_temp, if_index, round_last_line = CodeAnalyseTool().analyse_one_round(section_lines[last_line:], if_func_name, else_func_name, game_data, enemy_data)
             last_line += round_last_line
             print(f"One round done: if_index: {if_index}, round_last_line: {round_last_line}, last_line: {last_line}")
             print(f"command_list_temp: {command_list_temp}, ")
@@ -72,10 +78,10 @@ class CodeAnalyseTool:
         return command_list
 
     @classmethod
-    def analyse_one_round(cls, section_lines:List[str], func_name:str, game_data: GameData, enemy_data: Ennemy):
+    def analyse_one_round(cls, section_lines:List[str], if_func_name:str, else_func_name:str, game_data: GameData, enemy_data: Ennemy):
         print("analyse_one_round")
         # Searching for IF in the section
-        if_start_index, if_end_index = CodeAnalyseTool.searching_if(section_lines, func_name)
+        if_start_index, if_end_index, func_found = CodeAnalyseTool.searching_if(section_lines, if_func_name, else_func_name)
         print(f"if_start_index: {if_start_index}, if_end_index:{if_end_index} ")
         if if_start_index == -1:  # Didn't find any if, we analyse till the end:
             print("No if found, finishing analysing")
@@ -96,9 +102,12 @@ class CodeAnalyseTool:
         # Analysing the if section if found one
         if if_start_index != -1:
             print("Analysing the fresh if found")
-            if_section_command_list = CodeIfSection(game_data, enemy_data, section_lines[if_start_index: if_end_index+1], if_start_index)
-            command_list.extend(if_section_command_list.get_command())
-            last_line += if_section_command_list.get_nb_line()
+            if func_found == if_func_name:
+                section_command_list = CodeIfSection(game_data, enemy_data, section_lines[if_start_index: if_end_index+1], if_start_index)
+            elif func_found == else_func_name:
+                section_command_list = CodeElseSection(game_data, enemy_data, section_lines[if_start_index: if_end_index+1], if_start_index)
+            command_list.extend(section_command_list.get_command())
+            last_line += section_command_list.get_nb_line()
         return command_list, if_start_index, last_line
 
 
@@ -209,29 +218,85 @@ class CodeIfSection:
         ## Size should be at least 2
         if len(self._section_lines) < 2:
             print(f"Section too short, should be at least 2, but it's {len(self._section_lines)} lines")
-        ## IF first line is an IF or ELSE
-        op_if_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 2 or x["op_code"]==35]
-        if op_if_info[0]['func_name'] not in self._section_lines[0] or op_if_info[1]['func_name'] not in self._section_lines[0]:
+        ## IF first line is an IF
+        op_if_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 2][0]
+        op_else_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 35][0]
+        if op_if_info['func_name'] not in self._section_lines[0]:
             print(f"Unexpected first line of if section: {self._section_lines[0]}")
         print(f"next_line_to_start:{next_line_to_start}, end_line:{end_line}")
 
         # Analysing the content of the IF
-        self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], self.game_data, self.enemy_data)
+        self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], op_else_info['func_name'], self.game_data, self.enemy_data)
         print(f"Command list of if section: {self._command_list}")
         # Compute size of if
-        if_jump_size = 0
-        print("Reading if command size")
 
         # Adding an endif to the if
         end_command = Command(op_id=35, op_code=[0, 0], game_data=self.game_data, info_stat_data=self.enemy_data.info_stat_data,line_index=self._line_index+len(self._section_lines)-1)
         self._command_list.append(end_command)
         # Now we can insert on first line the complete if
-        print(f"if_jump_size: {if_jump_size}")
         if_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data,code_text_line=self._section_lines[0] + f"{{{self.get_size()}}}", line_index=self._line_index)
         print(if_command.get_command())
         self._command_list.insert(0,if_command.get_command())
 
         print(f"Code if section list: {self._command_list}")
+
+    def get_command(self):
+        return self._command_list
+
+    def get_nb_line(self):
+        return len(self._section_lines)
+
+    def get_size(self):
+        size = 0
+        for command in self._command_list:
+            size+=command.get_size()
+        return size
+
+
+class CodeElseSection:
+    def __init__(self, game_data: GameData, enemy_data, section_lines, line_index):
+        self._section_lines = section_lines
+        self._line_index = line_index
+        self.game_data = game_data
+        self.enemy_data = enemy_data
+        self._command_list = []
+        self._section_size = 0
+        self.analyse_section()
+
+    def analyse_section(self):
+        print("Analysing else section")
+        print(f"section_line: {self._section_lines}")
+        if len(self._section_lines) <= 1:
+            print("Short section")
+            print(self._section_lines)
+            return
+        # First remove first bracket and last bracket
+        next_line_to_start = 1 # Starting after the IF
+        end_line = len(self._section_lines)
+        if self._section_lines[1].replace(' ', '') == '{':
+            next_line_to_start+=1
+        else:
+            print(f"Not a bracket following if: {self._section_lines[1]}")
+        if self._section_lines[-1].replace(' ', '') == '}':
+            end_line-=1
+        else:
+            print(f"Not a bracket ending if: {self._section_lines[-1]}")
+        # Checking the section is correct
+        ## If first line is an else
+        op_if_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 2][0]
+        op_else_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 35][0]
+        if op_if_info['func_name'] not in self._section_lines[0]:
+            print(f"Unexpected first line of else section: {self._section_lines[0]}")
+        print(f"next_line_to_start:{next_line_to_start}, end_line:{end_line}")
+
+        # Analysing the content of the IF
+        self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], op_else_info['func_name'], self.game_data, self.enemy_data)
+        print(f"Command list of else section: {self._command_list}")
+        # Compute size of else
+        else_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{{{self.get_size()}}}",
+                              line_index=self._line_index)
+        print(else_command.get_command())
+        self._command_list.insert(0, else_command.get_command())
 
     def get_command(self):
         return self._command_list
@@ -259,9 +324,10 @@ class CodeAnalyser:
         """The idea is to go through each line, analyse it and remove the text line while adding the command in the list
         First, we search for an if. Having the line index of this if, we know each previous lines are normal command"""
         op_if_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 2][0]
+        op_else_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 35][0]
         print("Starting analysing the code")
         print(f"Split text: {self._section_lines}")
-        self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines, op_if_info['func_name'], self.game_data, self.enemy_data)
+        self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines, op_if_info['func_name'], op_else_info['func_name'], self.game_data, self.enemy_data)
 
         # Changing line index of each command as they should be in the correct order
         for i in range(len(self._command_list)):
