@@ -228,7 +228,6 @@ class IfritAIWidget(QWidget):
         remove_button.setText("-")
         remove_button.setFixedSize(30, 30)
         remove_button.clicked.connect(lambda: self.__remove_line(command, delete_data=True))
-        print(f"Command line inbdex: {command.line_index}")
         # Creating new element to list
         self.add_button_widget.insert(command.line_index, add_button)
         self.remove_button_widget.insert(command.line_index, remove_button)
@@ -312,14 +311,13 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        #file_to_load = os.path.join("OriginalFiles", "c0m088.dat")  # For developing faster
+        #file_to_load = os.path.join("OriginalFiles", "c0m028.dat")  # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
         if file_to_load:
             self.__clear_lines(delete_data=True)
             self.ifrit_manager.init_from_file(file_to_load)
-            print("END INIT FROM FILE")
             self.monster_name_label.setText(
                 "Monster : {}, file: {}".format(self.ifrit_manager.ennemy.info_stat_data['monster_name'].get_str(),
                                                 pathlib.Path(file_to_load).name))
@@ -332,21 +330,13 @@ class IfritAIWidget(QWidget):
 
     def __clear_lines(self, delete_data=False):
         command_list = [x.get_command() for x in self.command_line_widget]
-        print("Clear lines")
-        print(len(command_list))
         for command in command_list:
             self.__remove_line(command, delete_data)
 
     def __setup_section_data(self):
-        print("__setup_section_data")
         line_index = 0
         index_section = self.ifrit_manager.game_data.AIData.AI_SECTION_LIST.index(self.script_section.currentText())
         if self.ifrit_manager.ai_data:
-            print( self.ifrit_manager.ai_data)
-            print(len(self.ifrit_manager.ai_data))
-            print(self.ifrit_manager.ai_data[0])
-            print(self.ifrit_manager.ai_data[1])
-            print(self.ifrit_manager.ai_data[2])
             for command in self.ifrit_manager.ai_data[index_section]:
                 command.line_index = line_index
                 command.set_color(self.ifrit_manager.game_data.AIData.COLOR)

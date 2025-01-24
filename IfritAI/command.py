@@ -128,7 +128,6 @@ class Command:
 
         # Analysing simple cases by transforming the text into an integer
         if op_info['complexity'] == "simple":
-            print(f"Simple of code list: {op_code_list}")
             # Putting the parameters type in the correct order
             param_type_sorted = op_info['param_type'].copy()
             for i, param_index in enumerate(op_info['param_index']):
@@ -157,9 +156,6 @@ class Command:
                 elif param_type == "target_advanced_specific":
                     op_code_list[i] = [x['id'] for x in self.__get_target_list(advanced=True, specific=True) if x['data'] == op_code_list[i]][0]
                 elif param_type == "target_advanced_generic":
-                    print("YOYO")
-                    print(f"{self.__get_target_list(advanced=True, specific=False)}")
-                    print(f"{op_code_list[i]}")
                     op_code_list[i] = [x['id'] for x in self.__get_target_list(advanced=True, specific=False) if x['data'] == op_code_list[i]][0]
                 elif param_type == "target_basic":
                     op_code_list[i] = [x['id'] for x in self.__get_target_list(advanced=False, specific=False) if x['data'] == op_code_list[i]][0]
@@ -172,11 +168,6 @@ class Command:
                 else:
                     print(f"Text data analysis - Unknown type {param_type}, considering a int")
                     op_code_list[i] = int(op_code_list[i])
-            # # Putting the parameters in the correct order
-            # original_op_list = op_code_list.copy()
-            # for i, param_index in enumerate(op_info['param_index']):
-            #     op_code_list[param_index] = original_op_list[i]
-
         if op_info['op_code'] == 2:  # IF
             # Subject ID (0)
             op_code_list[0] = int(op_code_list[0])
@@ -245,17 +236,12 @@ class Command:
             op_code_list[6] = int(op_code_list[6])
 
         self.set_op_code(op_code_list)
-        print(f"OP CODE ANALYSED TEXT: {op_code_list}")
-
     def __analyse_text_data_old(self, code_text):
         """Deprecated function (even if it worked well). The idea was to test all possible op in the json and compare with the one given"""
         op_code_list = re.findall(r"\{(.*?)\}", code_text)
         text_without_op_code = code_text
         for match in op_code_list:
             text_without_op_code = text_without_op_code.replace('{' + match + '}', '{}')
-
-        print(text_without_op_code)
-
         # Matching for simple one
         op_code_dict_current = None
         for op_code_dict in self.game_data.ai_data_json['op_code_info']:
@@ -263,7 +249,6 @@ class Command:
                 op_code_dict_current = op_code_dict
                 break
         if op_code_dict_current:
-            print("Found a simple one !")
             for i, param_type in enumerate(op_code_dict_current['param_type']):
                 if param_type == "int":
                     op_code_list[i] = int(op_code_list[i])
@@ -358,12 +343,10 @@ class Command:
         # Matching for complex one
         ## Searching which op code correspond
         elif not op_code_dict_current:
-            print("Searching complex")
             for op_code_dict in self.game_data.ai_data_json['op_code_info']:
                 print(op_code_dict)
                 op_code_list_temp = op_code_list.copy()
                 if op_code_dict['complexity'] == 'complex':
-                    print("Complex !")
                     try:
                         # Preparing complex data before analysing (the one that are smaller than expected due to concatenation)
                         if op_code_dict['op_code'] == 35 and len(op_code_list) in (0, 1):
@@ -376,7 +359,6 @@ class Command:
                                 op_code_list = [byte1, byte2]
 
                         elif op_code_dict['op_code'] == 2 and len(op_code_list) in (5, 6):  # IF
-                            print("Its an IF !")
                             op_code_original_str_list = op_code_list.copy()
                             op_code_list = []
 
@@ -481,9 +463,7 @@ class Command:
                             call_function = getattr(self, "_Command__op_" + "{:02}".format(op_code_dict["op_code"]) + "_analysis")
                             call_result = call_function(op_code_list)
                             self.__raw_text = call_result[0]
-                            print(f"raw_text: {self.__raw_text}")
                             self.__raw_parameters = call_result[1]
-                            print(f"__raw_parameters: {self.__raw_parameters}")
                     except (TypeError, ValueError, IndexError) as e:
                         print("Problem searching for complex")
                         print(repr(e))
@@ -534,7 +514,6 @@ class Command:
                         param_value.append("UNKNOWN SPECIAL_ACTION")
                 elif type == "monster_line_ability":
                     possible_ability_values = []
-                    print("monster_line_ability")
                     nb_ability_high = len([x for x in self.info_stat_data['abilities_high'] if x['id'] != 0])
                     nb_ability_med = len([x for x in self.info_stat_data['abilities_med'] if x['id'] != 0])
                     nb_ability_low = len([x for x in self.info_stat_data['abilities_low'] if x['id'] != 0])
@@ -811,6 +790,7 @@ class Command:
         elif subject_id > 19:
             left_subject = {'text': '{}', 'param': self.__get_var_name(subject_id)}
         else:
+            print(f"Unexpected subject id: {subject_id}")
             left_subject = {'text': 'UNKNOWN SUBJECT', 'param': None}
 
         # Analysing right subject
@@ -906,10 +886,11 @@ class Command:
             else:
                 print(f"Unexpected right_param_type: {right_param_type}")
                 right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
+        elif subject_id > 19:
+            right_subject = {'text': '{}', 'param': [int(op_code_right_condition_param)]}
         else:
-            print(f"Unexpected subject id: {subject_id}")
-            right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
-
+                print(f"Unexpected subject ID ({subject_id}) for right_param_type analysis")
+                right_subject = {'text': '{}', 'param': [op_code_right_condition_param]}
         left_subject_text = left_subject['text'].format(left_subject['param'])
         right_subject_text = right_subject['text'].format(*right_subject['param'])
 
