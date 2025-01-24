@@ -36,6 +36,7 @@ class CodeWidget(QWidget):
         self.set_text_from_command(self._command_list)
 
     def change_expert_level(self, expert_level):
+        print("change_expert_level")
         self._expert_level = expert_level
         if expert_level == 2:
             self.compute_button.clicked.connect(self._compute_text_to_command)
@@ -71,7 +72,7 @@ class CodeWidget(QWidget):
         self._command_list = command_list
         func_list = []
         if_list_count = []
-        last_was_else_for_if = False
+        else_list_count = []
         for command in self._command_list:
             print(f"if_list_count: {if_list_count}")
             print("Current id func: {command.get_id()}")
@@ -80,15 +81,12 @@ class CodeWidget(QWidget):
                 if if_list_count[i] == 0:
                     func_list.append('}')
             print(f"if_list_count: {if_list_count}")
-            nb_remove = 0
             while 0 in if_list_count:
                 if_list_count.remove(0)
-                nb_remove += 1
             print(f"if_list_count: {if_list_count}")
             # text = [x[] for x in self.game_data.ai_data_json['op_code_info'] if x['op_code'] == command.get_id()
-            if command.get_id() != 2 and last_was_else_for_if:
-                last_was_else_for_if = False
-            elif command.get_id() == 2:  # IF
+            op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
+            if command.get_id() == 2:  # IF
                 print("ITS AN IF")
                 # func_list.append(command.get_text(with_size=False, for_code=True))
 
@@ -97,150 +95,67 @@ class CodeWidget(QWidget):
                 print(f"jump_value: {jump_value}")
                 if_list_count.append(jump_value)
                 print(command.get_text(with_size=False, for_code=True))
-                command_text = command.get_text(with_size=False, for_code=True)
+                command_text = command.get_text(with_size=False, for_code=True, html=True)
                 command_text = command_text.split('|')[0]
-                if last_was_else_for_if:
-                    command_text = command_text.replace('IF', "ELIF")
-                op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
+                #if last_was_else_for_if:
+                #    command_text = command_text.replace('IF', "ELIF")
+
+                func_line_text = op_info['func_name'] + ": "
+                func_line_text += command_text
+                func_list.append(func_line_text)
+                func_list.append('{')
+            elif command.get_id() == 35:
+                op_list = command.get_op_code()
+                jump_value = int.from_bytes(bytearray([op_list[0], op_list[1]]), byteorder='little')
+                print(f"jump_value for else: {jump_value}")
+
+                print(command.get_text(with_size=False, for_code=True))
+                if jump_value == 0:# An if is finishing here so we ignore it
+                    continue
+                print(f"Adding else with jump value: {jump_value}")
+                else_list_count.append(jump_value)
+                print(f"new else_list_count: {else_list_count}")
+                command_text = "ELSE"
                 func_line_text = op_info['func_name'] + ": "
                 func_line_text += command_text
                 func_list.append(func_line_text)
                 func_list.append('{')
 
-            else:
-                if nb_remove > 0 and command.get_id() == 35:  # We have an else that finish there
-                    op_list = command.get_op_code()
-                    jump_value = int.from_bytes(bytearray([op_list[0], op_list[1]]), byteorder='little')
-                    if jump_value > 0:
-                        last_was_else_for_if = True
-                    continue
 
+            else:
                 print(command.get_text(with_size=False, for_code=True))
                 op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
                 func_line_text = op_info['func_name'] + ": "
-                func_line_text += command.get_text(with_size=False, for_code=True)
+                func_line_text += command.get_text(with_size=False, for_code=True, html=True)
                 func_list.append(func_line_text)
+            # The else are closing after the function (you don't count the jump contrary to an if
+            if command.get_id() !=35:
+                for i in range(len(else_list_count)):
+                    else_list_count[i] -= command.get_size()
+                    if else_list_count[i] == 0:
+                        func_list.append('}')
+                print(f"else_list_count: {else_list_count}")
+                while 0 in else_list_count:
+                    else_list_count.remove(0)
 
+        func_list = self.__compute_indent_bracket(func_list)
         code_text = ""
         for func_name in func_list:
             code_text += func_name
             code_text += '<br/>'
         self.code_area_widget.setText(code_text)
-        self.__compute_indent_bracket()
 
     def _compute_ifrit_ai_code_to_command(self):
         print("compute ifrit start")
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
-        #
-        # # First analyse everything between { }
-        # print("First analyse")
-        # between_bracket = False
-        # useful_line_index = 0
-        # for index, line in enumerate(command_text_list):
-        #     print(f"index: {index}, line: {line}")
-        #     if line == "":
-        #         continue
-        #     elif line.replace(' ', '') == "{":
-        #         between_bracket = True
-        #         continue
-        #     elif line.replace(' ', '') == "}":
-        #         between_bracket = False
-        #         continue
-        #     elif "IF" in line:
-        #         useful_line_index+=1
-        #         continue
-        #     elif "ELIF" in line:
-        #         useful_line_index+=1
-        #         continue
-        #     if between_bracket:
-        #         print("between_bracket")
-        #         new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-        #                               battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_line_index, code_text=line)
-        #         self._command_list.append(new_command)
-        #         useful_line_index += 1
-        #         print(self._command_list)
-        #
-        #
-        # # Then analysing IF
-        # print("Second analyse")
-        # print(self._command_list)
-        # if_found = True
-        # count_while = 0
-        # while if_found:
-        #     print("Looping while")
-        #     useful_line_index = 0
-        #     real_if_line_index = 0
-        #     count_while +=1
-        #     if_found = False
-        #     in_if_counting = False
-        #     if_line_index = 0
-        #     counting_if = 0
-        #     for index, line in enumerate(command_text_list):
-        #         print(f"index: {index}, line: {line}")
-        #         print(f" counting_if:{counting_if}")
-        #         print(f" if_line_index:{if_line_index}")
-        #         print(f"if_found:{if_found}")
-        #         if 'IF' in line and 'ELSE' not in line:
-        #             print("IF WITHOUT ELSE FOUND")
-        #             counting_if = 0
-        #             useful_if_line_index = useful_line_index
-        #             real_if_line_index = index
-        #             if_found = True
-        #             in_if_counting = True
-        #             useful_line_index+=1
-        #             continue
-        #         elif 'IF' in line:
-        #             useful_line_index += 1
-        #             continue
-        #         elif line.replace(' ', '') == "{":
-        #             print("{ found")
-        #             continue
-        #         elif line.replace(' ', '') == "}": # End of counting
-        #             print("} found")
-        #             if counting_if == 0: # Already managed if
-        #                 continue
-        #             command_text_list[real_if_line_index] += f"| ELSE jump {{{counting_if+3}}} bytes forward"
-        #             print(f"Command: {command_text_list[real_if_line_index]}")
-        #             print(f"useful_if_line_index: {useful_if_line_index}")
-        #             new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-        #                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_if_line_index, code_text=command_text_list[real_if_line_index])
-        #             self._command_list.insert(useful_if_line_index, new_command)
-        #             new_command = Command(35, [0,0], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-        #                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=useful_line_index)
-        #
-        #             self._command_list.insert(useful_line_index, new_command)
-        #             counting_if = 0
-        #             in_if_counting = False
-        #             continue
-        #
-        #         elif "ELIF" in line:#TODO
-        #             print("ELIF")
-        #             line = line.replace('ELIF', 'IF')
-        #             new_command = Command(0, [], self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-        #                                   battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index, code_text=line)
-        #             self._command_list.append(new_command)
-        #         else:
-        #             current_command = [x.get_size() for x in self._command_list if x.line_index == useful_line_index]
-        #             if current_command and in_if_counting:
-        #                 counting_if += current_command[0]
-        #             else:
-        #                 print(f"No current command found on index: {index} for command list: {self._command_list}")
-        #             useful_line_index += 1
-        #     if not if_found:
-        #         break
-        #     if count_while > 3:
-        #         exit(-1)
-
         code_analyser = CodeAnalyser(self.game_data, self.ennemy_data, command_text_list)
         self._command_list = code_analyser.get_command()
+        print(f"End ai analyse, command list: {self._command_list}")
         for command in self._command_list:
-            print(command.get_text(with_size=False, for_code=True))
-            op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
-            func_line_text = op_info['func_name'] + ": "
-            func_line_text += command.get_text(with_size=False, for_code=True)
+            print(command)
+            print(f"Line index of command before hook: {command.line_index}")
         self.code_changed_hook(self._command_list)
-        # self.__compute_indent_bracket()
         print("compute ifrit end")
 
     def set_text_from_command(self, command_list: List[Command]):
@@ -330,18 +245,17 @@ class CodeWidget(QWidget):
 
         self.code_area_widget.setText(new_text)
 
-    def __compute_indent_bracket(self):
+    def __compute_indent_bracket(self, func_list:List):
         print("__compute_indent_bracket")
-        command_text_list = self.code_area_widget.toPlainText().splitlines()
         indent = 0
         new_text = ""
         indent_text = "&nbsp;" * 4
-        for i in range(len(command_text_list)):
-            command_without_space = command_text_list[i].replace(' ', '')
+        for i in range(len(func_list)):
+            command_without_space = func_list[i].replace(' ', '')
             if command_without_space == '}':
                 indent -= 1
-            command_text_list[i] = indent_text * indent + command_text_list[i]
+            func_list[i] = indent_text * indent + func_list[i]
             if command_without_space == '{':
                 indent += 1
-            new_text += command_text_list[i] + "<br/>"
-        self.code_area_widget.setText(new_text)
+            new_text += func_list[i] + "<br/>"
+        return func_list

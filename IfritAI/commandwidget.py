@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal, Qt
 from PyQt6.QtGui import QValidator
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QSpinBox, QFrame, QSizePolicy, QLabel, QComboBox
 from PyQt6.uic.Compiler.qtproxies import QtGui
@@ -57,7 +57,8 @@ class CommandWidget(QWidget):
 
         # Now the text
         self.layout_text = QHBoxLayout()
-        self.widget_text = QLabel(command.get_text())
+        self.widget_text = QLabel(command.get_text(html=True))
+        self.widget_text.setTextFormat(Qt.TextFormat.RichText)
         self.layout_text_spacing = QHBoxLayout()
         self.layout_text.addLayout(self.layout_text_spacing)
         self.layout_text.addWidget(self.widget_text)
@@ -78,7 +79,7 @@ class CommandWidget(QWidget):
         self.__reset_op_code_widget()
 
     def set_text(self):
-        self.widget_text.setText(self._command.get_text())
+        self.widget_text.setText(self._command.get_text(html=True))
 
     def set_if_index(self, if_index):
         self._command.set_if_index(if_index)
@@ -123,7 +124,7 @@ class CommandWidget(QWidget):
             else:
                 print("No data found for value: {}".format(self.op_id_widget.currentText()))
         self.__reset_op_code_widget()
-        self.widget_text.setText(self._command.get_text())
+        self.widget_text.setText(self._command.get_text(html=True))
         self.op_id_changed_signal_emitter.op_id_signal.emit()
 
     def __op_code_change(self):
@@ -138,7 +139,7 @@ class CommandWidget(QWidget):
             except:
                 print("Unexpected widget with type: {}".format(type(self.widget_op_code[i])))
         self._command.set_op_code(op_code)
-        self.widget_text.setText(self._command.get_text())
+        self.widget_text.setText(self._command.get_text(html=True))
         self.__reset_op_code_widget()
 
     def __reset_op_id_widget(self):
