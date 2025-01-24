@@ -56,9 +56,11 @@ class CodeAnalyseTool:
         command_list = []
         print("Starting looping !")
         last_line = 0
+        counter = 0
         while True:
             print(f"Calling one round with: {section_lines[last_line:]}")
-
+            #if counter == 4:
+            #    exit(-1)
             command_list_temp, if_index, round_last_line = CodeAnalyseTool().analyse_one_round(section_lines[last_line:], if_func_name, else_func_name, game_data, enemy_data)
             last_line += round_last_line
             print(f"One round done: if_index: {if_index}, round_last_line: {round_last_line}, last_line: {last_line}")
@@ -68,6 +70,7 @@ class CodeAnalyseTool:
             print(f"len(section_lines): {len(section_lines)}")
             if if_index < 0 or last_line == len(section_lines):
                 break
+            counter+=1
 
         #if last_line < len(section_lines):
         #    tutu = CodeAnalyseTool.analyse_lines(section_lines[last_line:], game_data, enemy_data)

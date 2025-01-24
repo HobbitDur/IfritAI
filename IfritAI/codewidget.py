@@ -113,7 +113,7 @@ class CodeWidget(QWidget):
                 if jump_value == 0:# An if is finishing here so we ignore it
                     continue
                 print(f"Adding else with jump value: {jump_value}")
-                else_list_count.append(jump_value)
+                else_list_count.append(jump_value+3)# Adding the else size himself
                 print(f"new else_list_count: {else_list_count}")
                 command_text = "ELSE"
                 func_line_text = op_info['func_name'] + ": "
@@ -129,7 +129,7 @@ class CodeWidget(QWidget):
                 func_line_text += command.get_text(with_size=False, for_code=True, html=True)
                 func_list.append(func_line_text)
             # The else are closing after the function (you don't count the jump contrary to an if
-            if command.get_id() !=35:
+            if command.get_id() >= 0:
                 for i in range(len(else_list_count)):
                     else_list_count[i] -= command.get_size()
                     if else_list_count[i] == 0:
