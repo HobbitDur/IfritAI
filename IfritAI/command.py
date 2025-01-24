@@ -88,16 +88,14 @@ class Command:
             for parameter in self.__raw_parameters:
                 parameters.append('{' + str(parameter) + '}')
 
-
         if html:
             for i in range(len(self.game_data.ai_data_json['list_comparator_html'])):
                 text = text.replace(self.game_data.ai_data_json['list_comparator'][i], self.game_data.ai_data_json['list_comparator_html'][i])
                 for j in range(len(parameters)):
-                    parameters[j] = parameters[j].replace(self.game_data.ai_data_json['list_comparator'][i],
+                    parameters[j] = str(parameters[j]).replace(self.game_data.ai_data_json['list_comparator'][i],
                                                                self.game_data.ai_data_json['list_comparator_html'][i])
             for i in range(len(parameters)):
                 parameters[i] = '<span style="color:' + self.__color_param + ';">' + parameters[i] + '</span>'
-
 
         for i in range(len(parameters)):  # Adding special text computation
             for text_added in self.__raw_text_added:
@@ -181,7 +179,7 @@ class Command:
                 else:
                     print(f"Text data analysis - Unknown type {param_type}, considering a int")
                     op_code_list[i] = int(op_code_list[i])
-        if op_info['op_code'] == 2:  # IF
+        elif op_info['op_code'] == 2:  # IF
             # Subject ID (0)
             op_code_list[0] = int(op_code_list[0])
             subject_id = op_code_list[0]
@@ -202,6 +200,13 @@ class Command:
                 op_code_list[1] = int(if_subject_left_parameter_text)
             elif if_subject_dict['param_left_type'] == "var":
                 op_code_list[1] = [x['op_code'] for x in self.game_data.ai_data_json['list_var'] if x['var_name'] == if_subject_left_parameter_text][0]
+            elif if_subject_dict['param_left_type'] == "subject10":# We don't use if_subject_left_parameter_text
+                subject10_list = [x['param_id'] for x in self.game_data.ai_data_json['subject_left_10'] if op_code_list[1] in x['text']]
+                if not subject10_list:
+                    print(f"Unexpected subject10: {op_code_list[1]}")
+                    op_code_list[1] = 0
+                else:
+                    op_code_list[1] = subject10_list[0]
             elif if_subject_dict['param_left_type'] == "int_shift":
                 if if_subject_dict['subject_id'] == 2:
                     shift = 1
@@ -237,10 +242,99 @@ class Command:
                 target_list = self.__get_target_list(advanced=True, specific=False)
                 op_code_list[3] = [x['id'] for x in target_list if x['data'] == r_cond][0]
             elif if_subject_dict['param_right_type'] == "complex":
-                print("TODO")
-                op_code_list[3] = 0
-            else:
-                print(f"Unexpected if subject param right type: {if_subject_dict['param_right_type']}")
+                if subject_id == 10:
+                    print("Subject ID 10 !")
+                    print(op_code_list[1])
+                    print(op_code_list[3])
+                    if op_code_list[1] == 0:  # Attack type
+                        search_value = [x['id'] for x in self.game_data.ai_data_json['attack_type'] if x['type'] == op_code_list[3]]
+                        if search_value:
+                            op_code_list[3] = search_value[0]
+                        else:
+                            print(f"Unexpected attack type: {op_code_list[3]}")
+                            op_code_list[3] = 0
+                    elif op_code_list[1] == 1:  # Target advanced specific
+                        search_value = [x['id'] for x in self.__get_target_list(advanced=True, specific=True) if x['data'] == op_code_list[3]]
+                        if search_value:
+                            op_code_list[3] = search_value[0]
+                        else:
+                            print(f"Unexpected target advanced specific: {op_code_list[3]}")
+                            op_code_list[3] = 0
+                    elif op_code_list[1] == 1:  # Target advanced specific
+                        search_value = [x['id'] for x in self.__get_target_list(advanced=True, specific=True) if x['data'] == op_code_list[3]]
+                        if search_value:
+                            op_code_list[3] = search_value[0]
+                        else:
+                            print(f"Unexpected target advanced specific: {op_code_list[3]}")
+                            op_code_list[3] = 0
+                    elif op_code_list[1] == 2:  # Target self
+                        search_value = [x['id'] for x in self.__get_target_list(advanced=True, specific=True) if x['data'] == "self"]
+                        if search_value:
+                            op_code_list[3] = search_value[0]
+                        else:
+                            print(f"Unexpected target advanced specific: {op_code_list[3]}")
+                            op_code_list[3] = 0
+                    elif op_code_list[1] == 3:  # Command type
+                        search_value = [x['id'] for x in self.game_data.ai_data_json['command_type'] if x['data'] == op_code_list[3]]
+                        if search_value:
+                            op_code_list[3] = search_value[0]
+                        else:
+                            print(f"Unexpected target advanced specific: {op_code_list[3]}")
+                            op_code_list[3] = 0
+                        if op_code_list[3] == 1:
+                            self.was_physical = True
+                        elif op_code_list[3] == 2:
+                            self.was_magical = True
+                        elif op_code_list[3] == 4:
+                            self.was_item = True
+                        elif op_code_list[3] == 254:
+                            self.was_gforce = True
+                    elif op_code_list[1] == 4:  # Last Command type or gforce
+                        # First Gforce
+                        search_value = [x['id'] for x in self.game_data.gforce_data_json['command_type'] if x['name'] == op_code_list[3]]
+                        if search_value:
+                            op_code_list[3] = search_value[0] + 64
+                        else:
+                            if self.was_physical:
+                                search_value = [x['id'] for x in self.game_data.special_action_data_json['special_action'] if x['name'] == op_code_list[3]]
+                                if search_value:
+                                    op_code_list[3] = search_value[0]
+                                else:
+                                    print(f"Unexpected last command type physical: {op_code_list[3]}")
+                                    op_code_list[3] = 0
+                            elif self.was_magic:
+                                search_value = [x['id'] for x in self.game_data.magic_data_json['magic'] if x['name'] == op_code_list[3]]
+                                if search_value:
+                                    op_code_list[3] = search_value[0]
+                                else:
+                                    print(f"Unexpected last command type magic: {op_code_list[3]}")
+                                    op_code_list[3] = 0
+                            elif self.was_item:
+                                search_value = [x['id'] for x in self.game_data.item_data_json['items'] if x['name'] == op_code_list[3]]
+                                if search_value:
+                                    op_code_list[3] = search_value[0]
+                                else:
+                                    print(f"Unexpected last command type item: {op_code_list[3]}")
+                                    op_code_list[3] = 0
+                            else:
+                                print(f"Unexpected last command type, not even gforce: {op_code_list[3]}")
+                                op_code_list[3] = int(op_code_list[3])
+                    elif op_code_list[1] == 5:  # Magic type
+                        search_value = [x['id'] for x in self.game_data.magic_data_json['magic_type'] if x['name'] == op_code_list[3]]
+                        if search_value:
+                            op_code_list[3] = search_value[0]
+                        else:
+                            print(f"Unexpected magic type: {op_code_list[3]}")
+                            op_code_list[3] = 0
+                    else:
+                        print(f"Unexpected param right for subject id 10: {op_code_list[3]}")
+                        op_code_list[3] = 0
+                    self.was_gforce = False
+                    self.was_item = False
+                    self.was_magic = False
+                    self.was_physical = False
+                else:
+                    print(f"Unexpected if subject param right type: {if_subject_dict['param_right_type']}")
 
             # Unused value (called debug)
             op_code_list[4] = int(op_code_list[4])
@@ -248,7 +342,7 @@ class Command:
             op_code_list[5] = int(op_code_list[5])
             op_code_list[6] = int(op_code_list[6])
         elif op_info['op_code'] == 45:
-            op_code_list[0] = [x['id'] for x in self.game_data.magic_data_json['magic_type'] if x['name']== op_code_list[0]]
+            op_code_list[0] = [x['id'] for x in self.game_data.magic_data_json['magic_type'] if x['name'] == op_code_list[0]]
             if op_code_list[0]:
                 op_code_list[0] = op_code_list[0][0]
             else:
@@ -257,251 +351,10 @@ class Command:
             op_code_list[2] = int(op_code_list[2])
 
         self.set_op_code(op_code_list)
-
-    def __analyse_text_data_old(self, code_text):
-        """Deprecated function (even if it worked well). The idea was to test all possible op in the json and compare with the one given"""
-        op_code_list = re.findall(r"\{(.*?)\}", code_text)
-        text_without_op_code = code_text
-        for match in op_code_list:
-            text_without_op_code = text_without_op_code.replace('{' + match + '}', '{}')
-        # Matching for simple one
-        op_code_dict_current = None
-        for op_code_dict in self.game_data.ai_data_json['op_code_info']:
-            if op_code_dict['text'].replace(' ', '') == text_without_op_code.replace(' ', ''):
-                op_code_dict_current = op_code_dict
-                break
-        if op_code_dict_current:
-            for i, param_type in enumerate(op_code_dict_current['param_type']):
-                if param_type == "int":
-                    op_code_list[i] = int(op_code_list[i])
-                if param_type == "percent":
-                    op_code_list[i] = int(int(op_code_list[i]) / 10)
-                elif param_type == "var":
-                    op_code_list[i] = [x['op_code'] for x in self.game_data.ai_data_json['list_var'] if x['var_name'] == op_code_list[i]][0]
-                elif param_type == "special_action":
-                    op_code_list[i] = [x['id'] for x in self.game_data.special_action_data_json['special_action'] if x['name'] == op_code_list[i]][0]
-                elif param_type == "monster_line_ability":
-                    if op_code_list[i] == "None":
-                        op_code_list[i] = 253  # None means a not existent line, so 253 is the default "garbage" one
-                        continue
-                    split_result = op_code_list[i].split(' | ')
-                    split_result[0] = split_result[0].replace('Low: ', '')
-                    split_result[1] = split_result[1].replace('Med: ', '')
-                    split_result[2] = split_result[2].replace('High: ', '')
-
-                    nb_ability_high = len([x for x in self.info_stat_data['abilities_high'] if x['id'] != 0])
-                    nb_ability_med = len([x for x in self.info_stat_data['abilities_med'] if x['id'] != 0])
-                    nb_ability_low = len([x for x in self.info_stat_data['abilities_low'] if x['id'] != 0])
-                    nb_abilities = max(nb_ability_high, nb_ability_med, nb_ability_low)
-                    for j in range(nb_abilities):
-                        high_text = ""
-                        med_text = ""
-                        low_text = ""
-
-                        if self.info_stat_data['abilities_high'][j]['type'] == 2:  # Magic
-                            high_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_high'][j]['id']]['name']
-                        elif self.info_stat_data['abilities_high'][j]['type'] == 4:  # Item
-                            high_text = self.game_data.item_data_json["items"][self.info_stat_data['abilities_high'][j]['id']]['name']
-                        elif self.info_stat_data['abilities_high'][j]['type'] == 8:  # Ability
-                            high_text = self.game_data.enemy_abilities_data_json["abilities"][self.info_stat_data['abilities_high'][j]['id']]['name']
-                        elif self.info_stat_data['abilities_high'][j]['type'] == 0:  # Emptyness
-                            high_text = "None"
-                        else:
-                            print(f"Unexpected high type ability: {self.info_stat_data['abilities_high'][j]['type']}")
-                        if high_text == split_result[2]:
-                            if self.info_stat_data['abilities_med'][j]['type'] == 2:  # Magic
-                                med_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_med'][j]['id']]['name']
-                            elif self.info_stat_data['abilities_med'][j]['type'] == 4:  # Item
-                                med_text = self.game_data.item_data_json["items"][self.info_stat_data['abilities_med'][j]['id']]['name']
-                            elif self.info_stat_data['abilities_med'][j]['type'] == 8:  # Ability
-                                med_text = self.game_data.enemy_abilities_data_json["abilities"][self.info_stat_data['abilities_med'][j]['id']]['name']
-                            elif self.info_stat_data['abilities_med'][j]['type'] == 0:  # Emptyness
-                                med_text = "None"
-                            else:
-                                print(f"Unexpected med type ability: {self.info_stat_data['abilities_high'][j]['type']}")
-                            if med_text == split_result[1]:
-                                if self.info_stat_data['abilities_low'][j]['type'] == 2:  # Magic
-                                    low_text = self.game_data.magic_data_json["magic"][self.info_stat_data['abilities_low'][j]['id']]['name']
-                                elif self.info_stat_data['abilities_low'][j]['type'] == 4:  # Item
-                                    low_text = self.game_data.item_data_json["items"][self.info_stat_data['abilities_low'][j]['id']]['name']
-                                elif self.info_stat_data['abilities_low'][j]['type'] == 8:  # Ability
-                                    low_text = self.game_data.enemy_abilities_data_json["abilities"][self.info_stat_data['abilities_low'][j]['id']]['name']
-                                elif self.info_stat_data['abilities_low'][j]['type'] == 0:  # Emptyness
-                                    low_text = "None"
-                                else:
-                                    print(f"Unexpected low type ability: {self.info_stat_data['abilities_high'][j]['type']}")
-                                if low_text == split_result[0]:
-                                    op_code_list[i] = j
-                                    break
-                elif param_type == "ability":
-                    op_code_list[i] = [x['id'] for x in self.game_data.enemy_abilities_data_json['abilities'] if x['name'] == op_code_list[i]][0]
-                elif param_type == "card":
-                    op_code_list[i] = [x['id'] for x in self.game_data.card_data_json['card_info'] if x['name'] == op_code_list[i]][0]
-                elif param_type == "monster":
-                    op_code_list[i] = [x['id'] for x in self.game_data.monster_data_json['monster'] if x['name'] == op_code_list[i]][0]
-                elif param_type == "item":
-                    op_code_list[i] = [x['id'] for x in self.game_data.item_data_json['items'] if x['name'] == op_code_list[i]][0]
-                elif param_type == "gforce":
-                    op_code_list[i] = [x['id'] for x in self.game_data.gforce_data_json['gforce'] if x['name'] == op_code_list[i]][0]
-                elif param_type == "target_advanced_specific":
-                    op_code_list[i] = [x['id'] for x in self.__get_target_list(advanced=True, specific=True) if x['data'] == op_code_list[i]][0]
-                elif param_type == "target_advanced_generic":
-                    op_code_list[i] = [x['id'] for x in self.__get_target_list(advanced=True, specific=False) if x['data'] == op_code_list[i]][0]
-                elif param_type == "target_basic":
-                    op_code_list[i] = [x['id'] for x in self.__get_target_list(advanced=False, specific=False) if x['data'] == op_code_list[i]][0]
-                elif param_type == "comparator":
-                    op_code_list[i] = self.game_data.ai_data_json['list_comparator'].index(op_code_list[i])
-                elif param_type == "status_ai":
-                    op_code_list[i] = [x['id'] for x in self.game_data.status_data_json['status_ai'] if x['name'] == op_code_list[i]][0]
-                elif param_type == "aptitude":
-                    op_code_list[i] = [x['aptitude_id'] for x in self.game_data.ai_data_json['aptitude_list'] if x['text'] == op_code_list[i]][0]
-                else:
-                    print(f"Text data analysis - Unknown type {param_type}, considering a int")
-                    op_code_list[i] = int(op_code_list[i])
-            # Putting the parameters in the correct order
-            original_op_list = op_code_list.copy()
-            for i, param_index in enumerate(op_code_dict_current['param_index']):
-                op_code_list[param_index] = original_op_list[i]
-        # Matching for complex one
-        ## Searching which op code correspond
-        elif not op_code_dict_current:
-            for op_code_dict in self.game_data.ai_data_json['op_code_info']:
-                print(op_code_dict)
-                op_code_list_temp = op_code_list.copy()
-                if op_code_dict['complexity'] == 'complex':
-                    try:
-                        # Preparing complex data before analysing (the one that are smaller than expected due to concatenation)
-                        if op_code_dict['op_code'] == 35 and len(op_code_list) in (0, 1):
-                            if len(op_code_list) == 0:  # ENDIF
-                                op_code_list = [0, 0]  # Endif is a jump to 0
-                            else:  # Expanding jump
-                                jump_2_byte = int(op_code_list[0]).to_bytes(byteorder="little", length=2)
-                                byte1 = int.from_bytes([jump_2_byte[0]])
-                                byte2 = int.from_bytes([jump_2_byte[1]])
-                                op_code_list = [byte1, byte2]
-
-                        elif op_code_dict['op_code'] == 2 and len(op_code_list) in (5, 6):  # IF
-                            op_code_original_str_list = op_code_list.copy()
-                            op_code_list = []
-
-                            # Subject ID (0)
-                            subject_id = int(op_code_original_str_list[3])
-                            op_code_list.append(subject_id)
-                            # Left condition (1)
-                            if_subject_dict = [x for x in self.game_data.ai_data_json['if_subject'] if x['subject_id'] == subject_id]
-                            if if_subject_dict:
-                                if_subject_dict = if_subject_dict[0]
-                            elif subject_id > 19:  # It's a var
-                                if_subject_dict = {"subject_id": op_code_original_str_list[3], "short_text": self.__get_var_name(subject_id),
-                                                   "left_text": self.__get_var_name(subject_id), "complexity": "simple", "param_left_type": "var",
-                                                   "param_right_type": "int"}
-                            # Now we want to have only the parameter of the subject, for this we remove data around
-                            split_text = if_subject_dict['left_text'].split('{}')
-                            if_subject_left_parameter_text = op_code_original_str_list[0].replace(split_text[0], '')
-                            if len(split_text) > 1:
-                                if_subject_left_parameter_text = if_subject_left_parameter_text.replace(split_text[1], '')
-                            if if_subject_dict['param_left_type'] == "int":
-                                op_code_list.append(int(if_subject_left_parameter_text))
-                            elif if_subject_dict['param_left_type'] == "var":
-                                op_code_list.append(if_subject_dict['left_text'])
-                            elif if_subject_dict['param_left_type'] == "int_shift":
-                                if if_subject_dict['subject_id'] == 2:
-                                    shift = 1
-                                else:
-                                    print("unexpected int_shift for subject id: {}")
-                                op_code_list.append(int(if_subject_left_parameter_text) + shift)
-                            elif if_subject_dict['param_left_type'] in ("target_advanced_specific", "target_advanced_generic"):
-                                if if_subject_dict['param_left_type'] == "target_advanced_specific":
-                                    target_list = self.__get_target_list(advanced=True, specific=True)
-                                if if_subject_dict['param_left_type'] == "target_advanced_generic":
-                                    target_list = self.__get_target_list(advanced=True, specific=False)
-                                target_id = [x['id'] for x in target_list if x['data'] == if_subject_left_parameter_text][0]
-                                op_code_list.append(int(target_id))
-                            elif if_subject_dict['param_left_type'] == "":
-                                op_code_list.append(0)  # Unused
-                            else:
-                                print(f"Unexpected if_subject_dict['param_left_type']: {if_subject_dict['param_left_type']}")
-                                op_code_list.append(0)
-                            # Comparison (2)
-                            op_code_list.append(self.game_data.ai_data_json['list_comparator'].index(op_code_original_str_list[1]))
-                            # Right condition (3)
-                            r_cond = op_code_original_str_list[2]
-                            if if_subject_dict['param_right_type'] == "int":
-                                op_code_list.append(int(r_cond))
-                            elif if_subject_dict['param_right_type'] == "percent":
-                                op_code_list.append(int(int(r_cond.replace(' %', '')) / 10))
-                            elif if_subject_dict['param_right_type'] == "status_ai":
-                                op_code_list.append([x['id'] for x in self.game_data.status_data_json['status_ai'] if x['name'] == r_cond][0])
-                            elif if_subject_dict['param_right_type'] == "target_advanced_specific":
-                                target_list = self.__get_target_list(advanced=True, specific=True)
-                                op_code_list.append([x['id'] for x in target_list if x['data'] == r_cond][0])
-                            elif if_subject_dict['param_right_type'] == "target_advanced_generic":
-                                target_list = self.__get_target_list(advanced=True, specific=False)
-                                op_code_list.append([x['id'] for x in target_list if x['data'] == r_cond][0])
-                            elif if_subject_dict['param_right_type'] == "complex":
-                                print("TODO")
-                                op_code_list.append(0)
-                            else:
-                                print(f"Unexpected if subject param right type: {if_subject_dict['param_right_type']}")
-
-                            # Unused value (called debug)
-                            if len(op_code_original_str_list) == 5:
-                                op_code_list.append(0)
-                            elif len(op_code_original_str_list) == 6:
-                                op_code_list.append(int(op_code_original_str_list[5]))
-                            # Expanding jump
-                            jump_2_byte = int(op_code_original_str_list[4]).to_bytes(byteorder="little", length=2)
-                            op_code_list.append(int.from_bytes([jump_2_byte[0]]))
-                            op_code_list.append(int.from_bytes([jump_2_byte[1]]))
-                        # Now if same size, we can analyse
-                        if len(op_code_list) == op_code_dict["size"]:
-                            print("Same size !")
-                            if op_code_dict['op_code'] not in (2, 35):  # If not previously analyzed
-                                for i in range(len(op_code_list)):
-                                    if op_code_dict['param_type'][i] == "int":
-                                        op_code_list[i] = int(op_code_list[i])
-                                    elif op_code_dict['param_type'][i] == "comparator":
-                                        op_code_list[i] = self.game_data.ai_data_json["list_comparator"].index(op_code_list[i])
-                                    elif op_code_dict['param_type'][i] == "target_advanced_generic":
-                                        op_code_list[i] = \
-                                            [x['param_id'] for x in self.game_data.ai_data_json["target_advanced_generic"] if x['text'] == op_code_list[i]][0]
-                                    elif op_code_dict['param_type'][i] == "target_advanced_specific":
-                                        op_code_list[i] = \
-                                            [x['param_id'] for x in self.game_data.ai_data_json["target_advanced_specific"] if x['text'] == op_code_list[i]][0]
-                                    elif op_code_dict['param_type'][i] == "target_basic":
-                                        op_code_list[i] = [x['param_id'] for x in self.game_data.ai_data_json["target_basic"] if x['text'] == op_code_list[i]][
-                                            0]
-                                    elif op_code_dict['param_type'][i] == "status_ai":
-                                        op_code_list[i] = [x['id'] for x in self.game_data.status_data_json['status_ai'] if x['name'] == op_code_list[i]][0]
-                                    elif op_code_dict['param_type'][i] == "battle_text":
-                                        op_code_list[i] = self.__battle_text.index(op_code_list[i])
-                                    else:
-                                        print(f"Unexpected param type: {op_code_dict['param_type'][i]}")
-                                original_op_list = op_code_list.copy()
-                                op_code_list = []
-                                for i, param_index in enumerate(op_code_dict['param_index']):
-                                    op_code_list[i] = original_op_list[param_index]
-
-                            call_function = getattr(self, "_Command__op_" + "{:02}".format(op_code_dict["op_code"]) + "_analysis")
-                            call_result = call_function(op_code_list)
-                            self.__raw_text = call_result[0]
-                            self.__raw_parameters = call_result[1]
-                    except (TypeError, ValueError, IndexError) as e:
-                        print("Problem searching for complex")
-                        print(repr(e))
-                        op_code_list = op_code_list_temp.copy()
-                        continue
-                    if code_text.replace(' ', '') == self.get_text(with_size=False, raw=False, for_code=True).replace(' ', ''):
-                        op_code_dict_current = op_code_dict
-                        break
-                op_code_list = op_code_list_temp.copy()
-
-        if not op_code_dict_current:
-            print("Didn't find any op_code for this function")
-            return "", ""
-
-        self.set_op_id(op_code_dict_current['op_code'])
-        self.set_op_code(op_code_list)
+        self.was_gforce = False
+        self.was_item = False
+        self.was_magic = False
+        self.was_physical = False
 
     def __analyse_op_data(self):
         self.reset_data()
@@ -586,7 +439,7 @@ class Command:
                             self.__raw_text_added.append({"id": len(param_value) - 1, "text": " (" + text + " )", "text_html": " (" + text + " )<br/>"})
                     if self.__op_code[op_index] >= nb_abilities:
                         param_value.append(253)
-                        self.__raw_text_added.append(" (None)")
+                        self.__raw_text_added.append({"id": 253, "text": " (None) ", "text_html": " (None) "})
                     else:
                         possible_ability_values.append({'id': 0, 'data': "None"})  # 253 for None value is often used by monsters.
                     self.param_possible_list.append(possible_ability_values)
@@ -789,7 +642,29 @@ class Command:
                     param_left = target_advanced_specific
                     list_param_possible_left.extend(self.__get_target_list(advanced=True, specific=True))
                 elif if_subject_left_data['param_left_type'] == "int":
-                    param_left = op_code_left_condition_param
+                    param_left = int(op_code_left_condition_param)
+                elif if_subject_left_data['param_left_type'] == "subject10":
+                    param_left = []
+                    print("subject10")
+                    subject_left_data = [x['text'] for x in self.game_data.ai_data_json['subject_left_10'] if x['param_id'] == op_code_left_condition_param]
+                    print(f'{subject_left_data}')
+                    print(f'{op_code_left_condition_param}')
+                    if not subject_left_data:
+                        if_subject_left_data["left_text"] = "Unknown last attack {}"
+                    else:
+                        if op_code_left_condition_param == 2:
+                            if_subject_left_data["left_text"] = subject_left_data[0].format("self")
+                        elif op_code_left_condition_param == 4:
+                            if op_code_right_condition_param < 64:
+                                if_subject_left_data["left_text"] = subject_left_data[0][1]
+                            else:
+                                if_subject_left_data["left_text"] = subject_left_data[0][0]
+                        else:
+                            if_subject_left_data["left_text"] = subject_left_data[0][0]
+                    print(if_subject_left_data["left_text"])
+                    sum_text = ""
+                    list_param_possible_left.extend(
+                        [{'id': x['param_id'], 'data': [sum_text + y for y in x['text']][-1]} for x in self.game_data.ai_data_json['subject_left_10']])
                 elif if_subject_left_data['param_left_type'] == "":
                     param_left = "UNKNOWN {}".format(op_code_left_condition_param)
                 else:
@@ -835,46 +710,31 @@ class Command:
                 right_subject = {'text': '{}', 'param': [self.__get_target(op_code[3], advanced=True, specific=False)]}
                 list_param_possible_right = self.__get_possible_target_advanced_specific()
             elif right_param_type == 'complex' and subject_id == 10:
-                attack_left_text = "{}"
-                attack_left_condition_param = str(op_code[1])
-                sum_text = ""
-                list_param_possible_left.extend(
-                    [{'id': x['param_id'], 'data': [sum_text + y for y in x['text']][-1]} for x in self.game_data.ai_data_json['subject_left_10']])
                 attack_right_text = "{}"
                 attack_right_condition_param = [str(op_code[3])]
-                subject_left_data = [x['text'] for x in self.game_data.ai_data_json['subject_left_10'] if x['param_id'] == op_code[1]]
-                if not subject_left_data:
-                    attack_left_text = "Unknown last attack {}"
-                else:
-                    attack_left_condition_param = subject_left_data[0][0]
                 if op_code[1] == 0:
-                    list_param_possible_right.extend(self.game_data.ai_data_json['attack_type'])
-                    attack_right_condition_param = [self.game_data.ai_data_json['attack_type'][op_code[3]]['type']]
+                    list_param_possible_right.extend([{"id": x['id'], "data": x['type']} for x in self.game_data.ai_data_json['attack_type']])
+                    attack_right_condition_param = [self.game_data.ai_data_json['attack_type'][op_code_right_condition_param]['type']]
                 elif op_code[1] == 1:
                     attack_right_condition_param = [self.__get_target(op_code_right_condition_param, advanced=True, specific=True)]
                     list_param_possible_right.extend(self.__get_possible_target_advanced_specific())
                 elif op_code[1] == 2:
-                    attack_left_condition_param = attack_left_condition_param.format("self")
+                    attack_right_condition_param = int(op_code_right_condition_param)
                 elif op_code[1] == 3:  # Need to handle better the was_magic
-                    list_param_possible_right.extend(
-                        [{"id": 1, "data": "Physical damage"}, {"id": 2, "data": "Magical damage"}, {"id": 4, "data": "Item"}, {"id": 254, "data": "G-Force"}])
+                    list_param_possible_right.extend([{"id": x['id'], "data": x['data']} for x in self.game_data.ai_data_json['command_type']])
+                    attack_right_condition_param = [x['data'] for x in self.game_data.ai_data_json['command_type'] if x['id' == op_code_right_condition_param]]
+                    if not attack_right_condition_param:
+                        attack_right_condition_param = ["Unknown {}".format(op_code_right_condition_param)]
                     if op_code_right_condition_param == 1:
-                        attack_right_condition_param = ["Physical damage"]
                         self.was_physical = True
                     elif op_code_right_condition_param == 2:
-                        attack_right_condition_param = ["Magical damage"]
                         self.was_magic = True
                     elif op_code_right_condition_param == 4:
-                        attack_right_condition_param = ["Item"]
                         self.was_item = True
                     elif op_code_right_condition_param == 254:
-                        attack_right_condition_param = ["G-Force"]
-                        self.was_force = True
-                    else:
-                        attack_right_condition_param = ["Unknown {}".format(op_code_right_condition_param)]
+                        self.was_gforce = True
                 elif op_code[1] == 4:
                     if op_code_right_condition_param >= 64:
-                        attack_left_condition_param = subject_left_data[0][0]
                         attack_right_condition_param = [self.game_data.gforce_data_json["gforce"][op_code_right_condition_param - 64]['name']]
                         list_param_possible_right.extend(self.__get_possible_gforce())
                     else:
@@ -889,7 +749,6 @@ class Command:
                             list_param_possible_right.extend(self.__get_possible_special_action())
                         else:
                             ret = str(op_code_right_condition_param)
-                        attack_left_condition_param = subject_left_data[0][1]
                         attack_right_condition_param = [ret]
                         self.was_magic = False
                         self.was_item = False
@@ -898,11 +757,7 @@ class Command:
                     attack_right_condition_param = [str(self.game_data.magic_data_json['magic_type'][op_code_right_condition_param]['name'])]
                     list_param_possible_right.extend(self.__get_possible_magic_type())
                 else:
-                    attack_left_text = "Unknown attack type {}"
-                    attack_left_condition_param = str(op_code[1])
                     attack_right_condition_param = [op_code_right_condition_param]
-
-                left_subject = {'text': attack_left_text, 'param': attack_left_condition_param}
                 right_subject = {'text': attack_right_text, 'param': attack_right_condition_param}
             else:
                 print(f"Unexpected right_param_type: {right_param_type}")
@@ -939,6 +794,11 @@ class Command:
         self.param_possible_list.append([])
         # List of "Debug" possible list
         self.param_possible_list.append([])
+
+        self.was_gforce = False
+        self.was_item = False
+        self.was_magic = False
+        self.was_physical = False
 
         if op_code[4] != 0:
             return ["IF {} {} {} (Subject ID is {}) | ELSE jump {} bytes forward | Debug = {}",

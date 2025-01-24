@@ -151,13 +151,11 @@ class CodeLine:
                     byte2 = int.from_bytes([jump_2_byte[1]])
                     op_code_list = [byte1, byte2]
             elif op_info['op_code'] == 45 and len(op_code_list) == 2:
-                print(op_code_list)
                 target = 900 - int(op_code_list[1])
                 low_byte = target // 256
                 high_byte = target - (low_byte*256)
                 op_code_list[1] = high_byte
                 op_code_list.append(low_byte)
-                print(op_code_list)
             else:
                 print(
                     f"When analysing command, wrong size of parameter ({len(op_code_list)} instead of {op_info['size']}) with op id unexpected {op_info['op_code']}")

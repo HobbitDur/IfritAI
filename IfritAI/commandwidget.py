@@ -173,7 +173,6 @@ class CommandWidget(QWidget):
         if not list_to_reset:
             list_to_reset = range(self.MAX_COMMAND_PARAM)
         for i in list_to_reset:
-
             if i < len(self.widget_op_code):
                 self.widget_op_code[i].setParent(None)
                 self.widget_op_code[i].deleteLater()

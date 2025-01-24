@@ -10,7 +10,7 @@ class GarbageFileError(IndexError):
     pass
 
 
-class Ennemy():
+class Ennemy:
     DAT_FILE_SECTION_LIST = ['header', 'skeleton', 'model_geometry', 'model_animation', 'unknown_section4', 'unknown_section5', 'unknown_section6', 'info_stat',
                              'battle_script', 'sound', 'unknown_section10', 'texture']
     MAX_MONSTER_TXT_IN_BATTLE = 10
