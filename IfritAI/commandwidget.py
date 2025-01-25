@@ -1,13 +1,11 @@
 from PyQt6.QtCore import QObject, pyqtSignal, Qt
-from PyQt6.QtGui import QValidator
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QSpinBox, QFrame, QSizePolicy, QLabel, QComboBox
-from PyQt6.uic.Compiler.qtproxies import QtGui
 
 from .command import Command
 from .qspinhex import QSpinHex
 
 
-class OpIdChangedEmmiter(QObject):
+class OpIdChangedEmitter(QObject):
     op_id_signal = pyqtSignal()
 
 
@@ -26,7 +24,7 @@ class CommandWidget(QWidget):
         self._print_hex = print_hex
 
         # signal
-        self.op_id_changed_signal_emitter = OpIdChangedEmmiter()
+        self.op_id_changed_signal_emitter = OpIdChangedEmitter()
 
         self.main_layout = QHBoxLayout()
         self.setLayout(self.main_layout)
@@ -201,7 +199,7 @@ class CommandWidget(QWidget):
                 self.widget_op_code[i].setMaximum(self.MAX_OP_CODE_VALUE)
                 self.widget_op_code[i].setMinimum(self.MIN_OP_CODE_VALUE)
                 self.widget_op_code[i].wheelEvent = lambda event: None
-
+                self.widget_op_code[i].setKeyboardTracking(False)
                 if i < len(self._command.get_op_code()):
                     self.widget_op_code[i].setValue(self._command.get_op_code()[i])
                 else:

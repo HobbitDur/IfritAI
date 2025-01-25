@@ -3,10 +3,10 @@ import pathlib
 from typing import List
 from venv import create
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QScrollArea, QPushButton, QFileDialog, QComboBox, QHBoxLayout, QLabel, \
-    QColorDialog, QCheckBox
+    QColorDialog, QCheckBox, QMessageBox
 
 from .codewidget import CodeWidget
 from .command import Command
@@ -38,56 +38,71 @@ class IfritAIWidget(QWidget):
         # Main window
         self.setWindowTitle("IfritAI")
         self.setMinimumSize(1280, 720)
-        self.setWindowIcon(QIcon(os.path.join(icon_path, 'icon.ico')))
-
+        self.__ifrit_icon = QIcon(os.path.join(icon_path, 'icon.ico'))
+        self.setWindowIcon(self.__ifrit_icon)
         self.save_button = QPushButton()
         self.save_button.setIcon(QIcon(os.path.join(icon_path, 'save.svg')))
         self.save_button.setFixedSize(30, 30)
         self.save_button.clicked.connect(self.__save_file)
         self.layout_main = QVBoxLayout()
+        self.save_button.setToolTip("Save all modification in the .dat (irreversible)")
 
         self.file_dialog = QFileDialog()
         self.file_dialog_button = QPushButton()
         self.file_dialog_button.setIcon(QIcon(os.path.join(icon_path, 'folder.png')))
         self.file_dialog_button.setFixedSize(30, 30)
         self.file_dialog_button.clicked.connect(self.__load_file)
+        self.file_dialog_button.setToolTip("Open a .dat file")
 
         self.reset_button = QPushButton()
         self.reset_button.setIcon(QIcon(os.path.join(icon_path, 'reset.png')))
         self.reset_button.setFixedSize(30, 30)
         self.reset_button.clicked.connect(self.__reload_file)
+        self.reset_button.setToolTip("Reload the file. /!\\ This will delete any local unsaved change made")
+
+        self.info_button = QPushButton()
+        self.info_button.setIcon(QIcon(os.path.join(icon_path, 'info.png')))
+        #self.info_button.setIconSize(QSize(30, 30))
+        self.info_button.setFixedSize(30, 30)
+        self.info_button.setToolTip("Show toolmaker info")
+        self.info_button.clicked.connect(self.__show_info)
 
         self.script_section = QComboBox()
         self.script_section.addItems(self.ifrit_manager.game_data.AIData.AI_SECTION_LIST)
         self.script_section.setCurrentIndex(1)
         self.script_section.activated.connect(self.__section_change)
+        self.script_section.setToolTip("Enemy AI as 5 section, you can choose which one you want to edit there")
 
         self.button_color_picker = QPushButton()
         self.button_color_picker.setText('Color')
         self.button_color_picker.setFixedSize(35, 30)
         self.button_color_picker.clicked.connect(self.__select_color)
+        self.button_color_picker.setToolTip("To choose which color to highlight the variable")
 
-        self.expert_selector = QCheckBox()
-        self.expert_selector.setChecked(False)
-        self.expert_selector.setText("Expert mode")
-        self.expert_selector.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.expert_selector.toggled.connect(self.__change_expert)
 
+        expert_tooltip_text = "IfritAI offer 4 different mod of editing:<br/>" + \
+                                        self.EXPERT_SELECTOR_ITEMS[0] + ": For modifying having a set of expected value<br/>" +\
+                                        self.EXPERT_SELECTOR_ITEMS[1] + ": For modifying directly the hex<br/>" +\
+                                        self.EXPERT_SELECTOR_ITEMS[2] + ": For getting raw function with list of value<br/>" +\
+                                        self.EXPERT_SELECTOR_ITEMS[3] + ": AI editor with IfritAI language."
         self.expert_selector_title = QLabel("Expert mode: ")
+        self.expert_selector_title.setToolTip(expert_tooltip_text)
         self.expert_selector = QComboBox()
         self.expert_selector.addItems(self.EXPERT_SELECTOR_ITEMS)
-        self.expert_selector.setCurrentIndex(3)
+        self.expert_selector.setCurrentIndex(0)
         self.expert_selector.activated.connect(self.__change_expert)
 
         self.expert_layout = QHBoxLayout()
         self.expert_layout.addWidget(self.expert_selector_title)
         self.expert_layout.addWidget(self.expert_selector)
+        self.expert_selector.setToolTip(expert_tooltip_text)
 
         self.hex_selector = QCheckBox()
         self.hex_selector.setChecked(False)
         self.hex_selector.setText("Hex value")
         self.hex_selector.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.hex_selector.toggled.connect(self.__change_hex)
+        self.hex_selector.setToolTip("Change all int value to hex value. Doesn't work on IfritAI code")
 
         self.monster_name_label = QLabel()
         self.monster_name_label.hide()
@@ -96,6 +111,7 @@ class IfritAIWidget(QWidget):
         self.layout_top.addWidget(self.file_dialog_button)
         self.layout_top.addWidget(self.save_button)
         self.layout_top.addWidget(self.reset_button)
+        self.layout_top.addWidget(self.info_button)
         self.layout_top.addWidget(self.button_color_picker)
         self.layout_top.addLayout(self.expert_layout)
         self.layout_top.addWidget(self.hex_selector)
@@ -126,6 +142,17 @@ class IfritAIWidget(QWidget):
 
         self.show()
 
+    def __show_info(self):
+        message_box = QMessageBox()
+        message_box.setText(f"Tool done by <b>Hobbitdur</b>.<br/>"
+                            f"You can support me on <a href='https://www.patreon.com/HobbitMods'>Patreon</a>.<br/>"
+                            f"Special thanks to :<br/>"
+                            f"&nbsp;&nbsp;-<b>Nihil</b> for beta testing and finding unknown values.<br/>"
+                            f"&nbsp;&nbsp;-<b>myst6re</b> for all the retro-engineering.")
+        message_box.setIcon(QMessageBox.Icon.Information)
+        message_box.setWindowIcon(self.__ifrit_icon)
+        message_box.setWindowTitle("IfritAI - Info")
+        message_box.exec()
     def code_expert_changed_hook(self, command_list: List[Command]):
         command_list_from_widget = [command_widget.get_command() for command_widget in self.command_line_widget]
         for command in command_list_from_widget:

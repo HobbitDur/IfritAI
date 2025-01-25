@@ -243,9 +243,6 @@ class Command:
                 op_code_list[3] = [x['id'] for x in target_list if x['data'] == r_cond][0]
             elif if_subject_dict['param_right_type'] == "complex":
                 if subject_id == 10:
-                    print("Subject ID 10 !")
-                    print(op_code_list[1])
-                    print(op_code_list[3])
                     if op_code_list[1] == 0:  # Attack type
                         search_value = [x['id'] for x in self.game_data.ai_data_json['attack_type'] if x['type'] == op_code_list[3]]
                         if search_value:
@@ -645,10 +642,7 @@ class Command:
                     param_left = int(op_code_left_condition_param)
                 elif if_subject_left_data['param_left_type'] == "subject10":
                     param_left = []
-                    print("subject10")
                     subject_left_data = [x['text'] for x in self.game_data.ai_data_json['subject_left_10'] if x['param_id'] == op_code_left_condition_param]
-                    print(f'{subject_left_data}')
-                    print(f'{op_code_left_condition_param}')
                     if not subject_left_data:
                         if_subject_left_data["left_text"] = "Unknown last attack {}"
                     else:
@@ -661,7 +655,6 @@ class Command:
                                 if_subject_left_data["left_text"] = subject_left_data[0][0]
                         else:
                             if_subject_left_data["left_text"] = subject_left_data[0][0]
-                    print(if_subject_left_data["left_text"])
                     sum_text = ""
                     list_param_possible_left.extend(
                         [{'id': x['param_id'], 'data': [sum_text + y for y in x['text']][-1]} for x in self.game_data.ai_data_json['subject_left_10']])
