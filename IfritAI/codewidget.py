@@ -4,9 +4,9 @@ from typing import List
 from PyQt6.QtWidgets import QWidget, QTextEdit, QHBoxLayout, QPushButton, QVBoxLayout, QSizePolicy
 
 from FF8GameData.gamedata import GameData
-from IfritAI.codeanalyser import CodeAnalyser
-from IfritAI.command import Command
-from IfritAI.ennemy import Ennemy
+from .codeanalyser import CodeAnalyser
+from .command import Command
+from .ennemy import Ennemy
 
 
 class CodeWidget(QWidget):
