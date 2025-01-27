@@ -1,8 +1,8 @@
 import copy
 import os
 
-from FF8GameData.GenericSection.ff8text import FF8Text
-from FF8GameData.gamedata import GameData
+from .FF8GameData.GenericSection.ff8text import FF8Text
+from .FF8GameData.gamedata import GameData
 from .command import Command
 
 

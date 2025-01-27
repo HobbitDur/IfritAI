@@ -1,9 +1,9 @@
 from os.path import split
 from typing import List
 
-from PyQt6.QtWidgets import QWidget, QTextEdit, QHBoxLayout, QPushButton, QVBoxLayout, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QTextEdit, QPushButton, QVBoxLayout
 
-from FF8GameData.gamedata import GameData
+from .FF8GameData.gamedata import GameData
 from .codeanalyser import CodeAnalyser
 from .command import Command
 from .ennemy import Ennemy
@@ -41,8 +41,8 @@ class CodeWidget(QWidget):
             self.compute_button.clicked.connect(self._compute_text_to_command)
         elif expert_level == 3:
             self.compute_button.clicked.connect(self._compute_ifrit_ai_code_to_command)
-        else:
-            print(f"Unexpected expert level in codewidget: {expert_level}")
+        # else:
+        #     print(f"Unexpected expert level in codewidget: {expert_level}")
 
     def change_hex(self, hex_chosen):
         self._hex_chosen = hex_chosen

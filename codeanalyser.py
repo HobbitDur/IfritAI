@@ -1,9 +1,8 @@
-from math import floor
 from typing import List
 import re
-from FF8GameData.gamedata import GameData
-from IfritAI.command import Command
-from IfritAI.ennemy import Ennemy
+from .FF8GameData.gamedata import GameData
+from .command import Command
+from .ennemy import Ennemy
 
 
 class CodeAnalyseTool:

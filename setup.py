@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='IfritAI',                 # The package name
-    version='2.1.4',                # Version number
+    version='1.0.0',                # Version number
     packages=find_packages(),       # Automatically discover all packages and subpackages
     description='AI modifiers for FF8 monsters',  # Short description
     author='hobbitdur',             # Author's name
-    url='https://github.com/HobbitDur/IfritEnhanced',  # GitHub or project URL
+    url='https://github.com/HobbitDur/IfritAI',  # GitHub or project URL
     classifiers=[
         'Programming Language :: Python :: 3',
         'Operating System :: OS Independent',

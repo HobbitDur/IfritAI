@@ -1,6 +1,6 @@
 from math import floor
 
-from FF8GameData.gamedata import GameData
+from .FF8GameData.gamedata import GameData
 import re
 
 
