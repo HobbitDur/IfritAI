@@ -3,7 +3,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from IfritAi.ifritaiwidget import IfritAIWidget
+from IfritAI.ifritaiwidget import IfritAIWidget
 
 sys._excepthook = sys.excepthook
 def exception_hook(exctype, value, traceback):
