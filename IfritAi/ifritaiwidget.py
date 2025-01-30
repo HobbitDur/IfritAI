@@ -8,9 +8,9 @@ from PyQt6.QtWidgets import QVBoxLayout, QWidget, QScrollArea, QPushButton, QFil
     QColorDialog, QCheckBox, QMessageBox
 
 from FF8GameData.dat.commandanalyser import CommandAnalyser
-from codewidget import CodeWidget
-from commandwidget import CommandWidget
-from ifritmanager import IfritManager
+from .codewidget import CodeWidget
+from .commandwidget import CommandWidget
+from .ifritmanager import IfritManager
 
 
 class IfritAIWidget(QWidget):
@@ -20,7 +20,9 @@ class IfritAIWidget(QWidget):
     MAX_OP_ID = 61
     MAX_OP_CODE_VALUE = 255
     MIN_OP_CODE_VALUE = 0
-    def __init__(self, icon_path=os.path.join(os.path.dirname(os.path.realpath(__file__)),"Resources"), game_data_folder=os.path.join(os.path.dirname(os.path.realpath(__file__)),"FF8GameData")):
+
+    def __init__(self, icon_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "Resources"),
+                 game_data_folder=os.path.join(os.path.dirname(os.path.realpath(__file__)), "FF8GameData")):
         QWidget.__init__(self)
         self.current_if_index = 0
         self.file_loaded = ""
@@ -59,7 +61,7 @@ class IfritAIWidget(QWidget):
 
         self.info_button = QPushButton()
         self.info_button.setIcon(QIcon(os.path.join(icon_path, 'info.png')))
-        #self.info_button.setIconSize(QSize(30, 30))
+        # self.info_button.setIconSize(QSize(30, 30))
         self.info_button.setFixedSize(30, 30)
         self.info_button.setToolTip("Show toolmaker info")
         self.info_button.clicked.connect(self.__show_info)
@@ -76,12 +78,11 @@ class IfritAIWidget(QWidget):
         self.button_color_picker.clicked.connect(self.__select_color)
         self.button_color_picker.setToolTip("To choose which color to highlight the variable")
 
-
         expert_tooltip_text = "IfritAI offer 4 different mod of editing:<br/>" + \
-                                        self.EXPERT_SELECTOR_ITEMS[0] + ": For modifying having a set of expected value<br/>" +\
-                                        self.EXPERT_SELECTOR_ITEMS[1] + ": For modifying directly the hex<br/>" +\
-                                        self.EXPERT_SELECTOR_ITEMS[2] + ": For getting raw function with list of value<br/>" +\
-                                        self.EXPERT_SELECTOR_ITEMS[3] + ": AI editor with IfritAI language."
+                              self.EXPERT_SELECTOR_ITEMS[0] + ": For modifying having a set of expected value<br/>" + \
+                              self.EXPERT_SELECTOR_ITEMS[1] + ": For modifying directly the hex<br/>" + \
+                              self.EXPERT_SELECTOR_ITEMS[2] + ": For getting raw function with list of value<br/>" + \
+                              self.EXPERT_SELECTOR_ITEMS[3] + ": AI editor with IfritAI language."
         self.expert_selector_title = QLabel("Expert mode: ")
         self.expert_selector_title.setToolTip(expert_tooltip_text)
         self.expert_selector = QComboBox()
@@ -116,7 +117,8 @@ class IfritAIWidget(QWidget):
         self.layout_top.addWidget(self.monster_name_label)
         self.layout_top.addStretch(1)
 
-        self.code_widget = CodeWidget(self.ifrit_manager.game_data, ennemy_data=self.ifrit_manager.ennemy, expert_level=self.expert_selector.currentIndex(), code_changed_hook=self.code_expert_changed_hook)
+        self.code_widget = CodeWidget(self.ifrit_manager.game_data, ennemy_data=self.ifrit_manager.ennemy, expert_level=self.expert_selector.currentIndex(),
+                                      code_changed_hook=self.code_expert_changed_hook)
         self.code_widget.hide()
 
         self.main_horizontal_layout = QHBoxLayout()
@@ -150,6 +152,7 @@ class IfritAIWidget(QWidget):
         message_box.setWindowIcon(self.__ifrit_icon)
         message_box.setWindowTitle("IfritAI - Info")
         message_box.exec()
+
     def code_expert_changed_hook(self, command_list: List[CommandAnalyser]):
         command_list_from_widget = [command_widget.get_command() for command_widget in self.command_line_widget]
         for command in command_list_from_widget:
@@ -187,7 +190,7 @@ class IfritAIWidget(QWidget):
             self.code_widget.set_text_from_command(command_list)
         elif expert_chosen == 3:  # IfritAI language
             self.code_widget.set_ifrit_ai_code_from_command(command_list)
-        if expert_chosen in (2,3):
+        if expert_chosen in (2, 3):
             self.code_widget.change_expert_level(expert_chosen)
 
     def __change_hex(self):
@@ -217,9 +220,10 @@ class IfritAIWidget(QWidget):
             if self.command_line_widget:
                 previous_command = self.command_line_widget[-1].get_command()
             else:
-                previous_command=None
+                previous_command = None
             new_command = CommandAnalyser(0, [], self.ifrit_manager.game_data, info_stat_data=self.ifrit_manager.ennemy.info_stat_data,
-                                  battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=len(self.command_line_widget), previous_command=previous_command)
+                                          battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=len(self.command_line_widget),
+                                          previous_command=previous_command)
 
         if create_data:
             self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, len(self.command_line_widget))
@@ -241,9 +245,10 @@ class IfritAIWidget(QWidget):
             if self.command_line_widget and len(self.command_line_widget) < index_insert:
                 previous_command = self.command_line_widget[index_insert].get_command()
             else:
-                previous_command=None
+                previous_command = None
             new_command = CommandAnalyser(0, [], self.ifrit_manager.game_data, info_stat_data=self.ifrit_manager.ennemy.info_stat_data,
-                                  battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=index_insert, previous_command=previous_command)
+                                          battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=index_insert,
+                                          previous_command=previous_command)
 
         if create_data:
             self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, index_insert)
@@ -275,7 +280,6 @@ class IfritAIWidget(QWidget):
         self.ai_line_layout[command.line_index].addWidget(self.command_line_widget[command.line_index])
         # Adding to the "main" layout
         self.ai_layout.insertLayout(command.line_index, self.ai_line_layout[command.line_index])
-
 
     def __remove_line(self, command, delete_data=True):
         # Removing the widget
@@ -344,7 +348,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        #file_to_load = os.path.join("IfritAI", "OriginalFiles", "c0m074.dat")  # For developing faster
+        # file_to_load = os.path.join("IfritAI", "OriginalFiles", "c0m074.dat")  # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
