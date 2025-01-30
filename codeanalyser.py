@@ -291,7 +291,7 @@ class CodeElseSection:
         else:
             previous_command = None
         self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], op_else_info['func_name'],
-                                                          self.game_data, self.enemy_data, previous_command=previous_command)
+                                                          self.game_data, self.enemy_data, section_previous_command=previous_command)
         # Compute size of else
         else_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{{{self.get_size()}}}",
                                 line_index=self._line_index, previous_command=previous_section_command)
