@@ -21,8 +21,7 @@ class IfritAIWidget(QWidget):
     MAX_OP_CODE_VALUE = 255
     MIN_OP_CODE_VALUE = 0
 
-    def __init__(self, icon_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "Resources"),
-                 game_data_folder=os.path.join(os.path.dirname(os.path.realpath(__file__)), "FF8GameData")):
+    def __init__(self, icon_path="Resources",game_data_folder="FF8GameData"):
         QWidget.__init__(self)
         self.current_if_index = 0
         self.file_loaded = ""
