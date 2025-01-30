@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QObject, pyqtSignal, Qt
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QSpinBox, QFrame, QSizePolicy, QLabel, QComboBox
 
-from .command import Command
+from .FF8GameData.dat.commandanalyser import CommandAnalyser
 from .qspinhex import QSpinHex
 
 
@@ -16,7 +16,7 @@ class CommandWidget(QWidget):
     MAX_OP_CODE_VALUE = 255
     MIN_OP_CODE_VALUE = 0
 
-    def __init__(self, command: Command, expert_chosen=0, print_hex=False):
+    def __init__(self, command: CommandAnalyser, expert_chosen=0, print_hex=False):
         QWidget.__init__(self)
         # Parameters
         self._command = command

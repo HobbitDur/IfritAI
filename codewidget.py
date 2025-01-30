@@ -3,16 +3,17 @@ from typing import List
 
 from PyQt6.QtWidgets import QWidget, QTextEdit, QPushButton, QVBoxLayout
 
+from .FF8GameData.dat.commandanalyser import CommandAnalyser
+from .FF8GameData.dat.monsteranalyser import MonsterAnalyser
 from .FF8GameData.gamedata import GameData
 from .codeanalyser import CodeAnalyser
-from .command import Command
-from .ennemy import Ennemy
+
 
 
 class CodeWidget(QWidget):
     IF_INDENT_SIZE = 3
 
-    def __init__(self, game_data: GameData, ennemy_data: Ennemy, expert_level=2, command_list: List[Command] = (), code_changed_hook=None,
+    def __init__(self, game_data: GameData, ennemy_data: MonsterAnalyser, expert_level=2, command_list: List[CommandAnalyser] = (), code_changed_hook=None,
                  hex_chosen: bool = False):
         QWidget.__init__(self)
         self.game_data = game_data
@@ -66,7 +67,7 @@ class CodeWidget(QWidget):
             new_code_text += command_id_text + op_code_new_text + "\n"
         self.code_area_widget.setText(new_code_text)
 
-    def set_ifrit_ai_code_from_command(self, command_list: List[Command]):
+    def set_ifrit_ai_code_from_command(self, command_list: List[CommandAnalyser]):
         self._command_list = command_list
         func_list = []
         if_list_count = []
@@ -137,7 +138,7 @@ class CodeWidget(QWidget):
         self._command_list = code_analyser.get_command()
         self.code_changed_hook(self._command_list)
 
-    def set_text_from_command(self, command_list: List[Command]):
+    def set_text_from_command(self, command_list: List[CommandAnalyser]):
         self._command_list = command_list
         func_list = []
         for command in self._command_list:
@@ -182,8 +183,12 @@ class CodeWidget(QWidget):
             else:
                 print("Unknown function name, using stop by default")
                 command_id = 0
-            new_command = Command(command_id, op_code_int, self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-                                  battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index)
+            if self._command_list:
+                previous_command = self._command_list[-1]
+            else:
+                previous_command = None
+            new_command = CommandAnalyser(command_id, op_code_int, self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
+                                  battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index, previous_command=previous_command)
             self._command_list.append(new_command)
         self.code_changed_hook(self._command_list)
         self.__compute_if()
