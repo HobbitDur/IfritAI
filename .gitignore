@@ -13,3 +13,4 @@
 *.sh
 IfritXlsx/OriginalFiles
 IfritXlsx/OutputFiles
+*.egg-info/

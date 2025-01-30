@@ -1,8 +1,5 @@
-import os
 import sys
-
 from PyQt6.QtWidgets import QApplication
-
 from IfritAI.ifritaiwidget import IfritAIWidget
 
 sys._excepthook = sys.excepthook
