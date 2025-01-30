@@ -25,7 +25,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-          pip install -e IfritAI/
           python --version
           pip freeze
       - uses: milliewalky/setup-7-zip@v1
