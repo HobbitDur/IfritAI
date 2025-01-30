@@ -1,9 +1,9 @@
 from typing import List
 import re
 
-from .FF8GameData.dat.commandanalyser import CommandAnalyser
-from .FF8GameData.dat.monsteranalyser import MonsterAnalyser
-from .FF8GameData.gamedata import GameData
+from FF8GameData.dat.commandanalyser import CommandAnalyser
+from FF8GameData.dat.monsteranalyser import MonsterAnalyser
+from FF8GameData.gamedata import GameData
 
 
 class CodeAnalyseTool:
