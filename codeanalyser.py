@@ -180,7 +180,7 @@ class CodeLine:
             for i, param_index in enumerate(op_info['param_index']):
                 op_code_list[param_index] = original_op_list[i]
 
-        self._command = CommandAnalyser(op_id=op_info['op_code'], op_code=op_code_list, game_data=self.game_data, info_stat_data=self.enemy_data.info_stat_data,
+        self._command = CommandAnalyser(op_id=op_info['op_code'], op_code=op_code_list, game_data=self.game_data, battle_text=self.enemy_data.battle_script_data['battle_text'], info_stat_data=self.enemy_data.info_stat_data,
                                 line_index=self._line_index, text_param=True, previous_command=previous_command)
 
     def get_command(self):
@@ -231,7 +231,7 @@ class CodeIfSection:
                 previous_command = self._command_list[-1]
             else:
                 previous_command = None
-            end_command = CommandAnalyser(op_id=35, op_code=[0, 0], game_data=self.game_data, info_stat_data=self.enemy_data.info_stat_data,
+            end_command = CommandAnalyser(op_id=35, op_code=[0, 0], game_data=self.game_data,battle_text=self.enemy_data.battle_script_data['battle_text'], info_stat_data=self.enemy_data.info_stat_data,
                                   line_index=self._line_index + len(self._section_lines) - 1, previous_command=previous_command)
             self._command_list.append(end_command)
         else:
@@ -324,7 +324,6 @@ class CodeAnalyser:
         self.analyse_code()
 
     def analyse_code(self):
-        print("analyse code")
         """The idea is to go through each line, analyse it and remove the text line while adding the command in the list
         First, we search for an if. Having the line index of this if, we know each previous lines are normal command"""
         op_if_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 2][0]
