@@ -47,7 +47,8 @@ class CodeAnalyseTool:
             else:
                 previous_command = command_list[-1]
             new_code_line = CodeLine(game_data, enemy_data, section_lines[i], i, previous_command=previous_command)
-            command_list.append(new_code_line.get_command())
+            if new_code_line:
+                command_list.append(new_code_line.get_command())
         return command_list
 
     @classmethod
@@ -154,6 +155,8 @@ class CodeLine:
                 jump_2_byte = int(op_code_original_str_list[4]).to_bytes(byteorder="little", length=2)
                 op_code_list.append(int.from_bytes([jump_2_byte[0]]))
                 op_code_list.append(int.from_bytes([jump_2_byte[1]]))
+
+
             elif op_info['op_code'] == 35 and len(op_code_list) in (0, 1):
                 if len(op_code_list) == 0:  # ENDIF
                     op_code_list = [0, 0]  # Endif is a jump to 0
@@ -248,7 +251,8 @@ class CodeIfSection:
     def get_size(self):
         size = 0
         for command in self._command_list:
-            size += command.get_size()
+            if command:
+                size += command.get_size()
         if  self._connected_else:
             size+= 3
         return size
@@ -320,16 +324,28 @@ class CodeAnalyser:
         self.analyse_code()
 
     def analyse_code(self):
+        print("analyse code")
         """The idea is to go through each line, analyse it and remove the text line while adding the command in the list
         First, we search for an if. Having the line index of this if, we know each previous lines are normal command"""
         op_if_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 2][0]
         op_else_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 35][0]
-        self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines, op_if_info['func_name'], op_else_info['func_name'], self.game_data,
+        temp_command_list = CodeAnalyseTool.analyse_loop(self._section_lines, op_if_info['func_name'], op_else_info['func_name'], self.game_data,
                                                           self.enemy_data)
 
+        print(temp_command_list)
+
         # Changing line index of each command as they should be in the correct order
-        for i in range(len(self._command_list)):
-            self._command_list[i].line_index = i
+        # Also remove empty lines
+        index = 0
+        for i in range(len(temp_command_list)):
+            if temp_command_list[i]:
+                self._command_list.append(temp_command_list[i])
+                self._command_list[-1].line_index =index
+                index +=1
+            else:
+                continue
+        print(temp_command_list)
+
 
     def get_command(self):
         return self._command_list

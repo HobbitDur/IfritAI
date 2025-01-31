@@ -38,12 +38,17 @@ class CodeWidget(QWidget):
 
     def change_expert_level(self, expert_level):
         self._expert_level = expert_level
+        try:
+            self.compute_button.clicked.disconnect()
+        except TypeError:
+            pass
         if expert_level == 2:
             self.compute_button.clicked.connect(self._compute_text_to_command)
         elif expert_level == 3:
             self.compute_button.clicked.connect(self._compute_ifrit_ai_code_to_command)
-        # else:
-        #     print(f"Unexpected expert level in codewidget: {expert_level}")
+        else:
+            self.compute_button.clicked.connect(lambda: None)
+            #print(f"Unexpected expert level in codewidget: {expert_level}")
 
     def change_hex(self, hex_chosen):
         self._hex_chosen = hex_chosen
@@ -132,11 +137,13 @@ class CodeWidget(QWidget):
         self.code_area_widget.setText(code_text)
 
     def _compute_ifrit_ai_code_to_command(self):
+        print("_compute_ifrit_ai_code_to_command start")
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
         code_analyser = CodeAnalyser(self.game_data, self.ennemy_data, command_text_list)
         self._command_list = code_analyser.get_command()
         self.code_changed_hook(self._command_list)
+        print("_compute_ifrit_ai_code_to_command end")
 
     def set_text_from_command(self, command_list: List[CommandAnalyser]):
         self._command_list = command_list
