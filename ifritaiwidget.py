@@ -8,9 +8,9 @@ from PyQt6.QtWidgets import QVBoxLayout, QWidget, QScrollArea, QPushButton, QFil
     QColorDialog, QCheckBox, QMessageBox
 
 from FF8GameData.dat.commandanalyser import CommandAnalyser
-from .codewidget import CodeWidget
-from .commandwidget import CommandWidget
-from .ifritmanager import IfritManager
+from codewidget import CodeWidget
+from commandwidget import CommandWidget
+from ifritmanager import IfritManager
 
 
 class IfritAIWidget(QWidget):
