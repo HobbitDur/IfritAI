@@ -121,6 +121,7 @@ class CodeLine:
         elif self._code_text_line.replace(' ', '') == "":
             print(f"Unexpected empty line")
             return
+
         code_split = self._code_text_line.split(':')
         func_name = code_split[0].replace(' ', '')
         op_code_list = re.findall(r"\{(.*?)\}", code_split[1])
@@ -136,6 +137,14 @@ class CodeLine:
             if op_info['op_code'] == 2 and len(op_code_list) in (4, 5):  # IF
                 op_code_original_str_list = op_code_list.copy()
                 op_code_list = []
+                # If it's var subject, we don't need a subject id.
+                if len(op_code_original_str_list) == 4:
+                    var_found = [x for x in self.game_data.ai_data_json['list_var'] if x['var_name'] == op_code_original_str_list[0]]
+                    if var_found:
+                        op_code_original_str_list.insert(3, str(var_found[0]['op_code']))
+                    else:
+                        print("Missing an if parameter even tho the subject is not a var, using 0 as subject ID")
+                        op_code_original_str_list.insert(3, str(op_code_list[0]))
 
                 # Subject ID (0)
                 subject_id = op_code_original_str_list[3]
