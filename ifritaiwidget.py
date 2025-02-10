@@ -206,8 +206,10 @@ class IfritAIWidget(QWidget):
                 command_widget.get_command().set_color(color.name())
                 command_widget.set_text()
 
+
     def __save_file(self):
         self.ifrit_manager.save_file(self.file_loaded)
+        self.__section_change()
         print("File saved")
 
     def __section_change(self):
@@ -279,6 +281,9 @@ class IfritAIWidget(QWidget):
         self.ai_line_layout[command.line_index].addWidget(self.command_line_widget[command.line_index])
         # Adding to the "main" layout
         self.ai_layout.insertLayout(command.line_index, self.ai_line_layout[command.line_index])
+
+    def __pop_command_widget(self, delete_data=True):
+        self.__remove_line(self.command_line_widget[-1].command, delete_data=delete_data)
 
     def __remove_line(self, command, delete_data=True):
         # Removing the widget

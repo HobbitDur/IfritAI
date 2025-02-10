@@ -16,3 +16,4 @@ class IfritManager:
 
     def save_file(self, file_path):
         self.ennemy.write_data_to_file(self.game_data, file_path)
+
