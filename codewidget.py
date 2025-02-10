@@ -52,25 +52,28 @@ class CodeWidget(QWidget):
 
     def change_hex(self, hex_chosen):
         self._hex_chosen = hex_chosen
-        new_code_text = ""
-        for line in self.code_area_widget.toPlainText().splitlines():
-            command_id_text, op_code_text = self._get_data_from_line(line)
-            op_code_new_text = ""
-            if op_code_text:
-                op_code_new_text += "("
-            for i in range(len(op_code_text)):
-                op_code_int = int(op_code_text[i], 0)
-                if i > 0:
-                    op_code_new_text += ", "
-                if self._hex_chosen:
-                    op_code_text_unit = "0x{:02X}".format(op_code_int)
-                else:
-                    op_code_text_unit = str(op_code_int)
-                op_code_new_text += op_code_text_unit
-            if op_code_text:
-                op_code_new_text += ")"
-            new_code_text += command_id_text + op_code_new_text + "\n"
-        self.code_area_widget.setText(new_code_text)
+        if self._expert_level == 3:
+            return
+        elif self._expert_level == 2:
+                new_code_text = ""
+                for line in self.code_area_widget.toPlainText().splitlines():
+                    command_id_text, op_code_text = self._get_data_from_line(line)
+                    op_code_new_text = ""
+                    if op_code_text:
+                        op_code_new_text += "("
+                    for i in range(len(op_code_text)):
+                        op_code_int = int(op_code_text[i], 0)
+                        if i > 0:
+                            op_code_new_text += ", "
+                        if self._hex_chosen:
+                            op_code_text_unit = "0x{:02X}".format(op_code_int)
+                        else:
+                            op_code_text_unit = str(op_code_int)
+                        op_code_new_text += op_code_text_unit
+                    if op_code_text:
+                        op_code_new_text += ")"
+                    new_code_text += command_id_text + op_code_new_text + "\n"
+                self.code_area_widget.setText(new_code_text)
 
     def set_ifrit_ai_code_from_command(self, command_list: List[CommandAnalyser]):
         self._command_list = command_list

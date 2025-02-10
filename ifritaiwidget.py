@@ -86,7 +86,7 @@ class IfritAIWidget(QWidget):
         self.expert_selector_title.setToolTip(expert_tooltip_text)
         self.expert_selector = QComboBox()
         self.expert_selector.addItems(self.EXPERT_SELECTOR_ITEMS)
-        self.expert_selector.setCurrentIndex(0)
+        self.expert_selector.setCurrentIndex(3)
         self.expert_selector.activated.connect(self.__change_expert)
 
         self.expert_layout = QHBoxLayout()
@@ -352,7 +352,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        # file_to_load = os.path.join("OriginalFiles", "c0m126.dat")  # For developing faster
+        # file_to_load = os.path.join("OriginalFiles", "c0m028.dat")  # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]

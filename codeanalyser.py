@@ -94,6 +94,7 @@ class CodeAnalyseTool:
                     next_line  = section_lines[if_end_index + 1]
                 else:
                     next_line = ""
+
                 section_command_list = CodeIfSection(game_data, enemy_data, section_lines[if_start_index: if_end_index + 1], if_start_index, next_line, section_previous_command=previous_command)
             elif func_found == else_func_name:
                 section_command_list = CodeElseSection(game_data, enemy_data, section_lines[if_start_index: if_end_index + 1], if_start_index, section_previous_command=previous_command)
@@ -121,10 +122,9 @@ class CodeLine:
         elif self._code_text_line.replace(' ', '') == "":
             print(f"Unexpected empty line")
             return
-
-        code_split = self._code_text_line.split(':')
+        code_split = self._code_text_line.split(':', 1)
         func_name = code_split[0].replace(' ', '')
-        op_code_list = re.findall(r"\{(.*?)\}", code_split[1])
+        op_code_list = re.findall(rf"{re.escape(CommandAnalyser.PARAM_CHAR_LEFT)}(.*?){re.escape(CommandAnalyser.PARAM_CHAR_RIGHT)}", code_split[1])
         op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["func_name"] == func_name]
         if op_info:
             op_info = op_info[0]
@@ -145,7 +145,6 @@ class CodeLine:
                     else:
                         print("Missing an if parameter even tho the subject is not a var, using 0 as subject ID")
                         op_code_original_str_list.insert(3, str(op_code_list[0]))
-
                 # Subject ID (0)
                 subject_id = op_code_original_str_list[3]
                 op_code_list.append(subject_id)
@@ -157,7 +156,7 @@ class CodeLine:
                 op_code_list.append(op_code_original_str_list[2])
                 # Unused value (called debug) (4)
                 if len(op_code_list) == 5:
-                    op_code_list.append(op_code_original_str_list[5])
+                    op_code_list.append(op_code_original_str_list[4])
                 elif len(op_code_list) == 4:
                     op_code_list.append(0)
                 # Expanding jump (5 and 6)
@@ -229,7 +228,6 @@ class CodeIfSection:
         op_else_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 35][0]
         if op_if_info['func_name'] not in self._section_lines[0]:
             print(f"Unexpected first line of if section: {self._section_lines[0]}")
-
         # Analysing the content of the IF
         self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], op_else_info['func_name'],
                                                           self.game_data, self.enemy_data)
@@ -247,7 +245,7 @@ class CodeIfSection:
             # As we don't add the ENDIF here, but still need to jump over the jump func, we had the 3 size
             self._connected_else = True
         # Now we can insert on first line the complete if
-        if_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{{{self.get_size()}}}",
+        if_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{CommandAnalyser.PARAM_CHAR_LEFT}{self.get_size()}{CommandAnalyser.PARAM_CHAR_RIGHT}",
                               line_index=self._line_index, previous_command=section_previous_command)
         self._command_list.insert(0, if_command.get_command())
 
@@ -306,7 +304,7 @@ class CodeElseSection:
         self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], op_else_info['func_name'],
                                                           self.game_data, self.enemy_data, section_previous_command=previous_command)
         # Compute size of else
-        else_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{{{self.get_size()}}}",
+        else_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{CommandAnalyser.PARAM_CHAR_LEFT}{self.get_size()}{CommandAnalyser.PARAM_CHAR_RIGHT}",
                                 line_index=self._line_index, previous_command=previous_section_command)
         self._command_list.insert(0, else_command.get_command())
 
