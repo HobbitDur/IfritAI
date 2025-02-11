@@ -134,31 +134,39 @@ class CodeLine:
 
         # Adding missing param when needed
         if op_info['size'] != len(op_code_list):
-            if op_info['op_code'] == 2 and len(op_code_list) in (4, 5):  # IF
+            if op_info['op_code'] == 2 and len(op_code_list) != 7:  # IF
                 op_code_original_str_list = op_code_list.copy()
                 op_code_list = []
                 # If it's var subject, we don't need a subject id.
                 if len(op_code_original_str_list) == 4:
                     var_found = [x for x in self.game_data.ai_data_json['list_var'] if x['var_name'] == op_code_original_str_list[0]]
                     if var_found:
-                        op_code_original_str_list.insert(3, str(var_found[0]['op_code']))
-                    else:
-                        print("Missing an if parameter even tho the subject is not a var, using 0 as subject ID")
-                        op_code_original_str_list.insert(3, str(op_code_list[0]))
+                        op_code_original_str_list.insert(0, str(var_found[0]['op_code']))
                 # Subject ID (0)
-                subject_id = op_code_original_str_list[3]
+                subject_id = int(op_code_original_str_list[0])
                 op_code_list.append(subject_id)
+                if subject_id <=20:
+                    subject_id_info = [x for x in self.game_data.ai_data_json['if_subject'] if x['subject_id'] == subject_id][0]
+                else:
+                    subject_id_info = {"subject_id": subject_id, "short_text": "VAR Subject",  # For a var, subject ID need to be 200 for local var
+                                   "left_text": '{}', "complexity": "simple", "param_left_type": "const",
+                                   "param_right_type": "int", "param_list": [200]}
                 # Left condition (1)
-                op_code_list.append(op_code_original_str_list[0])
-                # Comparison (2)
+                # First add the left param if needed
+                if '{}' not in subject_id_info['left_text']:
+                    if subject_id_info['param_left_type'] == "const":
+                        op_code_original_str_list.insert(1, str(subject_id_info['param_list'][0]))
+                    elif subject_id_info['param_left_type'] == "":
+                        op_code_original_str_list.insert(1, str(0))#Unused
+                    else:
+                        print(f"Unexpected param_left_type for analyse line: {subject_id_info['param_left_type']}")
                 op_code_list.append(op_code_original_str_list[1])
-                # Right condition (3)
+                # Comparison (2)
                 op_code_list.append(op_code_original_str_list[2])
+                # Right condition (3)
+                op_code_list.append(op_code_original_str_list[3])
                 # Unused value (called debug) (4)
-                if len(op_code_list) == 5:
-                    op_code_list.append(op_code_original_str_list[4])
-                elif len(op_code_list) == 4:
-                    op_code_list.append(0)
+                op_code_list.append(0)
                 # Expanding jump (5 and 6)
                 jump_2_byte = int(op_code_original_str_list[4]).to_bytes(byteorder="little", length=2)
                 op_code_list.append(int.from_bytes([jump_2_byte[0]]))
@@ -353,3 +361,4 @@ class CodeAnalyser:
 
     def get_command(self):
         return self._command_list
+
