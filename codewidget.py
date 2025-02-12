@@ -3,7 +3,7 @@ from typing import List
 
 from PyQt6.QtWidgets import QWidget, QTextEdit, QPushButton, QVBoxLayout
 
-from FF8GameData.dat.commandanalyser import CommandAnalyser
+from FF8GameData.dat.commandanalyser import CommandAnalyser, CurrentIfType
 from FF8GameData.dat.monsteranalyser import MonsterAnalyser
 from FF8GameData.gamedata import GameData
 from codeanalyser import CodeAnalyser
@@ -177,6 +177,7 @@ class CodeWidget(QWidget):
     def _compute_text_to_command(self):
         self._command_list = []
         command_text_list = self.code_area_widget.toPlainText().splitlines()
+        current_if_type= CurrentIfType.NONE
         for index, line in enumerate(command_text_list):
             command_id_text, op_code_text = self._get_data_from_line(line)
             op_code_int = []
@@ -191,12 +192,9 @@ class CodeWidget(QWidget):
             else:
                 print("Unknown function name, using stop by default")
                 command_id = 0
-            if self._command_list:
-                previous_command = self._command_list[-1]
-            else:
-                previous_command = None
             new_command = CommandAnalyser(command_id, op_code_int, self.game_data, info_stat_data=self.ennemy_data.info_stat_data,
-                                  battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index, previous_command=previous_command)
+                                  battle_text=self.ennemy_data.battle_script_data['battle_text'], line_index=index, current_if_type=current_if_type)
+            current_if_type = new_command.get_current_if_type()
             self._command_list.append(new_command)
         self.code_changed_hook(self._command_list)
         self.__compute_if()

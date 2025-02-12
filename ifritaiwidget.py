@@ -7,7 +7,7 @@ from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QScrollArea, QPushButton, QFileDialog, QComboBox, QHBoxLayout, QLabel, \
     QColorDialog, QCheckBox, QMessageBox
 
-from FF8GameData.dat.commandanalyser import CommandAnalyser
+from FF8GameData.dat.commandanalyser import CommandAnalyser, CurrentIfType
 from codewidget import CodeWidget
 from commandwidget import CommandWidget
 from ifritmanager import IfritManager
@@ -33,6 +33,7 @@ class IfritAIWidget(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setWidget(self.scroll_widget)
         self.ifrit_manager = IfritManager(game_data_folder)
+        self.current_if_type = CurrentIfType.NONE
         # Main window
         self.setWindowTitle("IfritAI")
         self.setMinimumSize(1280, 720)
@@ -218,14 +219,9 @@ class IfritAIWidget(QWidget):
 
     def __append_line(self, new_command: CommandAnalyser = None, create_data=True):
         if not new_command:
-            if self.command_line_widget:
-                previous_command = self.command_line_widget[-1].get_command()
-            else:
-                previous_command = None
             new_command = CommandAnalyser(0, [], self.ifrit_manager.game_data, info_stat_data=self.ifrit_manager.ennemy.info_stat_data,
-                                          battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=len(self.command_line_widget),
-                                          previous_command=previous_command)
-
+                                          battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=len(self.command_line_widget),current_if_type=self.current_if_type)
+            self.current_if_type = new_command.get_current_if_type()
         if create_data:
             self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, len(self.command_line_widget))
 
@@ -242,14 +238,9 @@ class IfritAIWidget(QWidget):
         else:
             index_insert = 0
 
-        if not new_command:
-            if self.command_line_widget and len(self.command_line_widget) < index_insert:
-                previous_command = self.command_line_widget[index_insert].get_command()
-            else:
-                previous_command = None
+        if not new_command: # Shouldn't need the current if type
             new_command = CommandAnalyser(0, [], self.ifrit_manager.game_data, info_stat_data=self.ifrit_manager.ennemy.info_stat_data,
-                                          battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=index_insert,
-                                          previous_command=previous_command)
+                                          battle_text=self.ifrit_manager.ennemy.battle_script_data['battle_text'], line_index=index_insert)
 
         if create_data:
             self.ifrit_manager.ennemy.insert_command(self.script_section.currentIndex(), new_command, index_insert)
@@ -352,7 +343,7 @@ class IfritAIWidget(QWidget):
             return lesser + [pivot] + greater
 
     def __load_file(self, file_to_load: str = ""):
-        #file_to_load = os.path.join("OriginalFiles", "c0m002.dat")  # For developing faster
+        # file_to_load = os.path.join("OriginalFiles", "c0m065.dat")  # For developing faster
         if not file_to_load:
             file_to_load = self.file_dialog.getOpenFileName(parent=self, caption="Search dat file", filter="*.dat",
                                                             directory=os.getcwd())[0]
