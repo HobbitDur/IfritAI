@@ -75,6 +75,7 @@ class CodeWidget(QWidget):
                     new_code_text += command_id_text + op_code_new_text + "\n"
                 self.code_area_widget.setText(new_code_text)
 
+
     def set_ifrit_ai_code_from_command(self, command_list: List[CommandAnalyser]):
         self._command_list = command_list
         func_list = []
@@ -138,6 +139,7 @@ class CodeWidget(QWidget):
             code_text += func_name
             code_text += '<br/>'
         self.code_area_widget.setText(code_text)
+        return code_text
 
     def _compute_ifrit_ai_code_to_command(self):
         self._command_list = []
