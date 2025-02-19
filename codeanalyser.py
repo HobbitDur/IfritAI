@@ -79,7 +79,7 @@ class CodeAnalyseTool:
         if if_start_index != -1:
             if func_found == if_func_name:
                 if len(section_lines) > if_end_index + 1:
-                    next_line  = section_lines[if_end_index + 1]
+                    next_line = section_lines[if_end_index + 1]
                 else:
                     next_line = ""
 
@@ -133,21 +133,21 @@ class CodeLine:
                 # Subject ID (0)
                 subject_id = int(op_code_original_str_list[0])
                 op_code_list.append(subject_id)
-                if subject_id <=20:
+                if subject_id <= 20:
                     subject_id_info = [x for x in self.game_data.ai_data_json['if_subject'] if x['subject_id'] == subject_id][0]
                 else:
                     subject_id_info = {"subject_id": subject_id, "short_text": "VAR Subject",  # For a var, subject ID need to be 200 for local var
-                                   "left_text": '{}', "complexity": "simple", "param_left_type": "const",
-                                   "param_right_type": "int", "param_list": [200]}
+                                       "left_text": '{}', "complexity": "simple", "param_left_type": "const",
+                                       "param_right_type": "int", "param_list": [200]}
                 # Left condition (1)
                 # First add the left param if needed
                 if '{}' not in subject_id_info['left_text']:
                     if subject_id_info['param_left_type'] == "const":
                         op_code_original_str_list.insert(1, str(subject_id_info['param_list'][0]))
                     elif subject_id_info['param_left_type'] == "":
-                        op_code_original_str_list.insert(1, str(0))#Unused
+                        op_code_original_str_list.insert(1, str(0))  # Unused
                     elif subject_id_info['param_left_type'] == "subject10":
-                        pass# It's a param on itself
+                        pass  # It's a param on itself
                     else:
                         print(f"Unexpected param_left_type for analyse line: {subject_id_info['param_left_type']}")
                 op_code_list.append(op_code_original_str_list[1])
@@ -174,7 +174,7 @@ class CodeLine:
             elif op_info['op_code'] == 45 and len(op_code_list) == 2:
                 target = 900 - int(op_code_list[1])
                 low_byte = target // 256
-                high_byte = target - (low_byte*256)
+                high_byte = target - (low_byte * 256)
                 op_code_list[1] = high_byte
                 op_code_list.append(low_byte)
             else:
@@ -186,15 +186,16 @@ class CodeLine:
             for i, param_index in enumerate(op_info['param_index']):
                 op_code_list[param_index] = original_op_list[i]
 
-        self._command = CommandAnalyser(op_id=op_info['op_code'], op_code=op_code_list, game_data=self.game_data, battle_text=self.enemy_data.battle_script_data['battle_text'], info_stat_data=self.enemy_data.info_stat_data,
-                                line_index=self._line_index, text_param=True)
+        self._command = CommandAnalyser(op_id=op_info['op_code'], op_code=op_code_list, game_data=self.game_data, battle_text=self.enemy_data.battle_script_data['battle_text'],
+                                        info_stat_data=self.enemy_data.info_stat_data,
+                                        line_index=self._line_index, text_param=True)
 
     def get_command(self):
         return self._command
 
 
 class CodeIfSection:
-    def __init__(self, game_data: GameData, enemy_data, section_lines, line_index, next_line:str):
+    def __init__(self, game_data: GameData, enemy_data, section_lines, line_index, next_line: str):
         self._section_lines = section_lines
         self._line_index = line_index
         self.game_data = game_data
@@ -232,14 +233,16 @@ class CodeIfSection:
         # Adding an endif to the if only if next is not an else
         else_name = op_else_info['func_name'] + ":"
         if not else_name in self._next_line:
-            end_command = CommandAnalyser(op_id=35, op_code=[0, 0], game_data=self.game_data,battle_text=self.enemy_data.battle_script_data['battle_text'], info_stat_data=self.enemy_data.info_stat_data,
-                                  line_index=self._line_index + len(self._section_lines) - 1)
+            end_command = CommandAnalyser(op_id=35, op_code=[0, 0], game_data=self.game_data, battle_text=self.enemy_data.battle_script_data['battle_text'],
+                                          info_stat_data=self.enemy_data.info_stat_data,
+                                          line_index=self._line_index + len(self._section_lines) - 1)
             self._command_list.append(end_command)
         else:
             # As we don't add the ENDIF here, but still need to jump over the jump func, we had the 3 size
             self._connected_else = True
         # Now we can insert on first line the complete if
-        if_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{CommandAnalyser.PARAM_CHAR_LEFT}{self.get_size()}{CommandAnalyser.PARAM_CHAR_RIGHT}",
+        if_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data,
+                              code_text_line=self._section_lines[0] + f"{CommandAnalyser.PARAM_CHAR_LEFT}{self.get_size()}{CommandAnalyser.PARAM_CHAR_RIGHT}",
                               line_index=self._line_index)
         self._command_list.insert(0, if_command.get_command())
 
@@ -254,8 +257,8 @@ class CodeIfSection:
         for command in self._command_list:
             if command:
                 size += command.get_size()
-        if  self._connected_else:
-            size+= 3
+        if self._connected_else:
+            size += 3
         return size
 
 
@@ -294,7 +297,8 @@ class CodeElseSection:
         self._command_list = CodeAnalyseTool.analyse_loop(self._section_lines[next_line_to_start:end_line], op_if_info['func_name'], op_else_info['func_name'],
                                                           self.game_data, self.enemy_data)
         # Compute size of else
-        else_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data, code_text_line=self._section_lines[0] + f"{CommandAnalyser.PARAM_CHAR_LEFT}{self.get_size()}{CommandAnalyser.PARAM_CHAR_RIGHT}",
+        else_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data,
+                                code_text_line=self._section_lines[0] + f"{CommandAnalyser.PARAM_CHAR_LEFT}{self.get_size()}{CommandAnalyser.PARAM_CHAR_RIGHT}",
                                 line_index=self._line_index)
         self._command_list.insert(0, else_command.get_command())
 
@@ -326,7 +330,7 @@ class CodeAnalyser:
         op_if_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 2][0]
         op_else_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["op_code"] == 35][0]
         temp_command_list = CodeAnalyseTool.analyse_loop(self._section_lines, op_if_info['func_name'], op_else_info['func_name'], self.game_data,
-                                                          self.enemy_data)
+                                                         self.enemy_data)
 
         # Changing line index of each command as they should be in the correct order
         # Also remove empty lines
@@ -334,16 +338,98 @@ class CodeAnalyser:
         for i in range(len(temp_command_list)):
             if temp_command_list[i]:
                 self._command_list.append(temp_command_list[i])
-                self._command_list[-1].line_index =index
-                index +=1
+                self._command_list[-1].line_index = index
+                index += 1
             else:
                 continue
         current_if_type = CurrentIfType.NONE
         for i in range(len(self._command_list)):
             current_if_type = self._command_list[i].compute_op_data(current_if_type)
 
-
-
     def get_command(self):
         return self._command_list
 
+    @staticmethod
+    def compute_ifrit_ai_code_to_command(game_data:GameData, enemy_data, ifrit_ai_code: str):
+        command_text_list = ifrit_ai_code.splitlines()
+        code_analyser = CodeAnalyser(game_data, enemy_data, command_text_list)
+        return code_analyser.get_command()
+
+    @staticmethod
+    def set_ifrit_ai_code_from_command(game_data:GameData, command_list: List[CommandAnalyser]):
+        func_list = []
+        if_list_count = []
+        else_list_count = []
+
+        for command in command_list:
+            last_else = False
+            for i in range(len(if_list_count)):
+                if_list_count[i] -= command.get_size()
+                if if_list_count[i] == 0:
+                    func_list.append('}')
+            for i in range(len(else_list_count)):
+                if else_list_count[i] == 0:
+                    # if command.get_id() == 2:
+                    #     op_list = command.get_op_code()
+                    #     jump_value = int.from_bytes(bytearray([op_list[5], op_list[6]]), byteorder='little')
+                    #     else_list_count[i]+=jump_value + command.get_size() # Adding size of if as we compute it in the same turn
+                    # elif command.get_id() != 2:  # If we jump to a if, means we are still in the else, just forward jumping
+                    func_list.append('}')
+            while 0 in else_list_count:
+                else_list_count.remove(0)
+            while 0 in if_list_count:
+                if_list_count.remove(0)
+            op_info = [x for x in game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
+            if command.get_id() == 2:  # IF
+                op_list = command.get_op_code()
+                jump_value = int.from_bytes(bytearray([op_list[5], op_list[6]]), byteorder='little')
+                if_list_count.append(jump_value)
+                command_text = command.get_text(with_size=False, for_code=True, html=True)
+                command_text = command_text.split('|')[0]
+                func_line_text = op_info['func_name'] + ": "
+                func_line_text += command_text
+                func_list.append(func_line_text)
+                func_list.append('{')
+            elif command.get_id() == 35:
+                op_list = command.get_op_code()
+                jump_value = int.from_bytes(bytearray([op_list[0], op_list[1]]), byteorder='little')
+                if jump_value > 0:  # We don't add the endif
+                    last_else = True
+                    else_list_count.append(jump_value)  # Adding the else size himself
+                    command_text = "ELSE"
+                    func_line_text = op_info['func_name'] + ": "
+                    func_line_text += command_text
+                    func_list.append(func_line_text)
+                    func_list.append('{')
+            else:
+                op_info = [x for x in game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
+                func_line_text = op_info['func_name'] + ": "
+                func_line_text += command.get_text(with_size=False, for_code=True, html=True)
+                func_list.append(func_line_text)
+            # The else are closing after the function (you don't count the jump contrary to an if
+            for i in range(len(else_list_count)):
+                if i == len(else_list_count) - 1 and last_else:  # Don't update the else we just added with his own size !
+                    continue
+                else_list_count[i] -= command.get_size()
+
+        func_list = CodeAnalyser.compute_indent_bracket(func_list)
+        code_text = ""
+        for func_name in func_list:
+            code_text += func_name
+            code_text += '<br/>'
+        return code_text
+
+    @staticmethod
+    def compute_indent_bracket(func_list: List):
+        indent = 0
+        new_text = ""
+        indent_text = "&nbsp;" * 4
+        for i in range(len(func_list)):
+            command_without_space = func_list[i].replace(' ', '')
+            if command_without_space == '}':
+                indent -= 1
+            func_list[i] = indent_text * indent + func_list[i]
+            if command_without_space == '{':
+                indent += 1
+            new_text += func_list[i] + "<br/>"
+        return func_list
