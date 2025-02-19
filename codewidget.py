@@ -14,9 +14,7 @@ class CodeWidget(QWidget):
 
     def __init__(self, game_data: GameData, ennemy_data: MonsterAnalyser, expert_level=2, command_list: List[CommandAnalyser] = (), code_changed_hook=None,
                  hex_chosen: bool = False):
-        print("code widget before init")
         QWidget.__init__(self)
-        print("Start code widget")
         self.game_data = game_data
         self.ennemy_data = ennemy_data
         self.code_changed_hook = code_changed_hook
@@ -36,7 +34,6 @@ class CodeWidget(QWidget):
 
         self._command_list = command_list
         self.set_text_from_command(self._command_list)
-        print("End code widget")
 
     def change_expert_level(self, expert_level):
         self._expert_level = expert_level
