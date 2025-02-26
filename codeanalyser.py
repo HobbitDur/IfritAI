@@ -17,7 +17,7 @@ class CodeAnalyseTool:
         index_end_if = -1
         func_found = None
         for i in range(len(lines)):
-            if if_func_name + ":" in lines[i].replace(' ', '') or else_func_name + ":" in lines[i].replace(' ', ''):  # New if found
+            if if_func_name + ":" in lines[i].replace(' ', '') or (else_func_name + ":" in lines[i].replace(' ', '') and CodeAnalyser.ELSE_TEXT in lines[i].replace(' ', '')):  # New if found or else found
                 if if_func_name + ":" in lines[i].replace(' ', ''):
                     func_found = if_func_name
                 else:
@@ -167,7 +167,10 @@ class CodeLine:
                 if len(op_code_list) == 0:  # ENDIF
                     op_code_list = [0, 0]  # Endif is a jump to 0
                 else:  # Expanding jump
-                    jump_2_byte = int(op_code_list[0]).to_bytes(byteorder="little", length=2)
+                    jump_value = int(op_code_list[0])
+                    if jump_value < 0:
+                        jump_value = CommandAnalyser.twos_complement_opposite_16bit(jump_value)
+                    jump_2_byte = jump_value.to_bytes(byteorder="little", length=2)
                     byte1 = int.from_bytes([jump_2_byte[0]])
                     byte2 = int.from_bytes([jump_2_byte[1]])
                     op_code_list = [byte1, byte2]
@@ -232,13 +235,14 @@ class CodeIfSection:
                                                           self.game_data, self.enemy_data)
         # Adding an endif to the if only if next is not an else
         else_name = op_else_info['func_name'] + ":"
-        if not else_name in self._next_line:
+
+        if not else_name in self._next_line: # Endif
             end_command = CommandAnalyser(op_id=35, op_code=[0, 0], game_data=self.game_data, battle_text=self.enemy_data.battle_script_data['battle_text'],
                                           info_stat_data=self.enemy_data.info_stat_data,
                                           line_index=self._line_index + len(self._section_lines) - 1)
             self._command_list.append(end_command)
         else:
-            # As we don't add the ENDIF here, but still need to jump over the jump func, we had the 3 size
+            # As we don't add the ENDIF here, but still need to jump over the jump func, we add the 3 size
             self._connected_else = True
         # Now we can insert on first line the complete if
         if_command = CodeLine(game_data=self.game_data, enemy_data=self.enemy_data,
@@ -316,6 +320,7 @@ class CodeElseSection:
 
 
 class CodeAnalyser:
+    ELSE_TEXT = 'ELSE'
     def __init__(self, game_data: GameData, enemy_data: MonsterAnalyser, code_text_split):
         self.game_data = game_data
         self.enemy_data = enemy_data
@@ -400,7 +405,7 @@ class CodeAnalyser:
                 elif jump_value > 0:  # We don't add the endif
                     last_else = True
                     else_list_count.append(jump_value)  # Adding the else size himself
-                    command_text = "ELSE"
+                    command_text = CodeAnalyser.ELSE_TEXT
                     func_line_text = op_info['func_name'] + ": "
                     func_line_text += command_text
                     func_list.append(func_line_text)
