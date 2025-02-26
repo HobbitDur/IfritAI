@@ -393,7 +393,11 @@ class CodeAnalyser:
             elif command.get_id() == 35:
                 op_list = command.get_op_code()
                 jump_value = int.from_bytes(bytearray([op_list[0], op_list[1]]), byteorder='little')
-                if jump_value > 0:  # We don't add the endif
+                if jump_value & 0x8000 != 0: #Jump backward so we don't add anything related to else, just a jump backward for the moment
+                    func_line_text = op_info['func_name'] + ": "
+                    func_line_text += command.get_text(with_size=False, for_code=True, html=True)
+                    func_list.append(func_line_text)
+                elif jump_value > 0:  # We don't add the endif
                     last_else = True
                     else_list_count.append(jump_value)  # Adding the else size himself
                     command_text = "ELSE"
@@ -402,7 +406,6 @@ class CodeAnalyser:
                     func_list.append(func_line_text)
                     func_list.append('{')
             else:
-                op_info = [x for x in game_data.ai_data_json['op_code_info'] if x["op_code"] == command.get_id()][0]
                 func_line_text = op_info['func_name'] + ": "
                 func_line_text += command.get_text(with_size=False, for_code=True, html=True)
                 func_list.append(func_line_text)
