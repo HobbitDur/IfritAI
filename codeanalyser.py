@@ -104,7 +104,6 @@ class CodeLine:
         self._analyse_line()
 
     def _analyse_line(self):
-        print(self._code_text_line)
         if self._code_text_line.replace(' ', '') in ('{', '}'):
             print(f"Unexpected {{ or }}: {self._code_text_line.replace(' ', '')}")
             return
@@ -158,7 +157,6 @@ class CodeLine:
                 op_code_list.append(op_code_original_str_list[2])
 
                 # Right condition (3)
-                print(subject_id_info)
                 if '{}' not in subject_id_info['right_text']:
                     if subject_id_info['param_right_type'] == "const":
                         op_code_original_str_list.insert(1, str(subject_id_info['param_list'][1]))
@@ -203,7 +201,6 @@ class CodeLine:
                                         info_stat_data=self.enemy_data.info_stat_data,
                                         line_index=self._line_index, text_param=True)
 
-    print("End analyse line")
     def get_command(self):
         return self._command
 
