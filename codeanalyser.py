@@ -104,6 +104,7 @@ class CodeLine:
         self._analyse_line()
 
     def _analyse_line(self):
+        print(self._code_text_line)
         if self._code_text_line.replace(' ', '') in ('{', '}'):
             print(f"Unexpected {{ or }}: {self._code_text_line.replace(' ', '')}")
             return
@@ -122,6 +123,7 @@ class CodeLine:
 
         # Adding missing param when needed
         if op_info['size'] != len(op_code_list):
+            print("Size different")
             if op_info['op_code'] == 2 and len(op_code_list) != 7:  # IF
                 op_code_original_str_list = op_code_list.copy()
                 op_code_list = []
@@ -130,6 +132,7 @@ class CodeLine:
                     var_found = [x for x in self.game_data.ai_data_json['list_var'] if x['var_name'] == op_code_original_str_list[0]]
                     if var_found:
                         op_code_original_str_list.insert(0, str(var_found[0]['op_code']))
+
                 # Subject ID (0)
                 subject_id = int(op_code_original_str_list[0])
                 op_code_list.append(subject_id)
@@ -137,7 +140,7 @@ class CodeLine:
                     subject_id_info = [x for x in self.game_data.ai_data_json['if_subject'] if x['subject_id'] == subject_id][0]
                 else:
                     subject_id_info = {"subject_id": subject_id, "short_text": "VAR Subject",  # For a var, subject ID need to be 200 for local var
-                                       "left_text": '{}', "complexity": "simple", "param_left_type": "const",
+                                       "left_text": '{}', "complexity": "simple", "param_left_type": "const", "right_text": '{}',
                                        "param_right_type": "int", "param_list": [200]}
                 # Left condition (1)
                 # First add the left param if needed
@@ -153,7 +156,14 @@ class CodeLine:
                 op_code_list.append(op_code_original_str_list[1])
                 # Comparison (2)
                 op_code_list.append(op_code_original_str_list[2])
+
                 # Right condition (3)
+                print(subject_id_info)
+                if '{}' not in subject_id_info['right_text']:
+                    if subject_id_info['param_right_type'] == "const":
+                        op_code_original_str_list.insert(1, str(subject_id_info['param_list'][1]))
+                    else:
+                        print(f"Unexpected param_right_type for analyse line: {subject_id_info['param_right_type']}")
                 op_code_list.append(op_code_original_str_list[3])
                 # Unused value (called debug) (4)
                 op_code_list.append(0)
@@ -193,6 +203,7 @@ class CodeLine:
                                         info_stat_data=self.enemy_data.info_stat_data,
                                         line_index=self._line_index, text_param=True)
 
+    print("End analyse line")
     def get_command(self):
         return self._command
 
