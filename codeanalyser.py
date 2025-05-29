@@ -122,7 +122,6 @@ class CodeLine:
 
         # Adding missing param when needed
         if op_info['size'] != len(op_code_list):
-            print("Size different")
             if op_info['op_code'] == 2 and len(op_code_list) != 7:  # IF
                 op_code_original_str_list = op_code_list.copy()
                 op_code_list = []
@@ -146,20 +145,26 @@ class CodeLine:
                 if '{}' not in subject_id_info['left_text']:
                     if subject_id_info['param_left_type'] == "const":
                         op_code_original_str_list.insert(1, str(subject_id_info['param_list'][0]))
+
+                        op_code_original_str_list[1] = str( subject_id_info['param_list'][0])
                     elif subject_id_info['param_left_type'] == "":
                         op_code_original_str_list.insert(1, str(0))  # Unused
                     elif subject_id_info['param_left_type'] == "subject10":
                         pass  # It's a param on itself
                     else:
                         print(f"Unexpected param_left_type for analyse line: {subject_id_info['param_left_type']}")
+                elif subject_id_info['param_left_type'] == "int_right" and subject_id_info['param_right_type'] == "alive":
+                    alive_left_value = str(op_code_original_str_list[1])
                 op_code_list.append(op_code_original_str_list[1])
                 # Comparison (2)
                 op_code_list.append(op_code_original_str_list[2])
 
                 # Right condition (3)
-                if '{}' not in subject_id_info['right_text']:
+                if subject_id_info['right_text'] != "{}" and subject_id_info['right_text'] != "":
                     if subject_id_info['param_right_type'] == "const":
-                        op_code_original_str_list.insert(1, str(subject_id_info['param_list'][1]))
+                        op_code_original_str_list.insert(3, str(subject_id_info['param_list'][1]))
+                    elif subject_id_info['param_left_type'] == "int_right" and subject_id_info['param_right_type'] == "alive":
+                        op_code_original_str_list.insert(3, alive_left_value)
                     else:
                         print(f"Unexpected param_right_type for analyse line: {subject_id_info['param_right_type']}")
                 op_code_list.append(op_code_original_str_list[3])
