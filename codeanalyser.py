@@ -104,14 +104,17 @@ class CodeLine:
         self._analyse_line()
 
     def _analyse_line(self):
-        if self._code_text_line.replace(' ', '') in ('{', '}'):
-            print(f"Unexpected {{ or }}: {self._code_text_line.replace(' ', '')}")
+        replaced_line = self._code_text_line.replace(' ', '')
+        replaced_line = replaced_line.replace('\t', '')
+        if replaced_line in ('{', '}'):
+            print(f"Unexpected {{ or }}: {replaced_line}")
             return
-        elif self._code_text_line.replace(' ', '') == "":
+        elif replaced_line == "":
             print(f"Unexpected empty line")
             return
         code_split = self._code_text_line.split(':', 1)
         func_name = code_split[0].replace(' ', '')
+        func_name = func_name.replace('\t', '')
         op_code_list = re.findall(rf"{re.escape(CommandAnalyser.PARAM_CHAR_LEFT)}(.*?){re.escape(CommandAnalyser.PARAM_CHAR_RIGHT)}", code_split[1])
         op_info = [x for x in self.game_data.ai_data_json['op_code_info'] if x["func_name"] == func_name]
         if op_info:
