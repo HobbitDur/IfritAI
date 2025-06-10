@@ -17,7 +17,7 @@ class CodeAnalyseTool:
         index_end_if = -1
         func_found = None
         for i in range(len(lines)):
-            if if_func_name + ":" in lines[i].replace(' ', '') or (else_func_name + ":" in lines[i].replace(' ', '') and CodeAnalyser.ELSE_TEXT in lines[i].replace(' ', '')):  # New if found or else found
+            if if_func_name + ":" in lines[i].replace(' ', '') or (else_func_name + ":" in lines[i].replace(' ', '') and CodeAnalyser.ELSE_TEXT in (lines[i].replace(' ', '')).upper()):  # New if found or else found
                 if if_func_name + ":" in lines[i].replace(' ', ''):
                     func_found = if_func_name
                 else:
@@ -162,7 +162,8 @@ class CodeLine:
                 # Comparison (2)
                 op_code_list.append(op_code_original_str_list[2])
 
-                # Right condition (3)
+                # Right condition (3 and 4)
+
                 if subject_id_info['right_text'] != "{}" and subject_id_info['right_text'] != "":
                     if subject_id_info['param_right_type'] == "const":
                         op_code_original_str_list.insert(3, str(subject_id_info['param_list'][1]))
@@ -170,9 +171,10 @@ class CodeLine:
                         op_code_original_str_list.insert(3, alive_left_value)
                     else:
                         print(f"Unexpected param_right_type for analyse line: {subject_id_info['param_right_type']}")
+                # Right param takes 2 bytes, but we gives only one parameters so we add an empty one
                 op_code_list.append(op_code_original_str_list[3])
-                # Unused value (called debug) (4)
                 op_code_list.append(0)
+
                 # Expanding jump (5 and 6)
                 jump_2_byte = int(op_code_original_str_list[4]).to_bytes(byteorder="little", length=2)
                 op_code_list.append(int.from_bytes([jump_2_byte[0]]))
